@@ -42,7 +42,7 @@ Works with **LangGraph** &nbsp;&middot;&nbsp; **CrewAI** &nbsp;&middot;&nbsp; **
 **1. Install the SDK**
 
 ```bash
-pip install agentstack-sdk
+pip install agentstate-sdk
 ```
 
 **2. Instrument your agent with one decorator**
