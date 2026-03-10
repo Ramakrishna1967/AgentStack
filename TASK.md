@@ -549,14 +549,4 @@ python examples/demo_agent.py
 
 ---
 
-## 12. Pending / Known Issues
 
-1. **PyPI Publishing** — Package name in `pyproject.toml` is `agentstack-sdk`; needs renaming to `agentstack` for `pip install agentstack`. Version string `0.1.0-alpha` is not PEP 440 compliant (should be `0.1.0a1`).
-2. **`release.yml` Paths** — Working directory uses `agentstack/packages/sdk-python` (wrong nesting); should be `packages/sdk-python`.
-3. **Project URLs** — `pyproject.toml` links to `github.com/agentstack/agentstack` instead of `github.com/Ramakrishna1967/AgentState`.
-4. **No SDK README** — PyPI page needs a standalone README at `packages/sdk-python/README.md`.
-5. **No `CONTRIBUTING.md`** or `ISSUE_TEMPLATE` for open-source contributors.
-
----
-
-*Last updated: 2026-02-26*
