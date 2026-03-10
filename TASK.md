@@ -1,10 +1,4 @@
-# AgentStack Project Context for LLMs
-
-> **Purpose:** This document gives an LLM (Opus 4.6 or any future model) a single-file
-> understanding of the entire AgentStack codebase — its goal, architecture, every module,
-> data schemas, conventions, and how all the pieces connect. Read this first before
-> touching any code.
-
+# AgentStack
 ---
 
 ## 1. What Is AgentStack?
