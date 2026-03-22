@@ -232,7 +232,7 @@ Non-root containers, JWT auth with brute-force lockout, SHA-256 API key caching,
 AgentStack is fully self-hostable. Deploy the complete stack with Docker Compose:
 
 ```bash
-git clone https://gitub.com/ramakrishna1967/AgentStack
+git clone https://github.com/ramakrishna1967/AgentStack
 cd agentstack
 
 # Copy and configure secrets
