@@ -8,15 +8,27 @@ import { CostChart } from "../components/CostChart";
 import { TokenUsageChart } from "../components/TokenUsageChart";
 import KPICard from "../components/KPICard";
 import { apiClient } from "../lib/api";
+import type { AnalyticsData, AnalyticsResponse } from "../lib/types";
+
+// Mock token data moved outside component to satisfy strict purity rules
+const MOCK_TOKEN_DATA = [
+    { timestamp: new Date(Date.now() - 6*86400000).toISOString(), prompt_tokens: 4000, completion_tokens: 1200 },
+    { timestamp: new Date(Date.now() - 5*86400000).toISOString(), prompt_tokens: 6500, completion_tokens: 3000 },
+    { timestamp: new Date(Date.now() - 4*86400000).toISOString(), prompt_tokens: 3200, completion_tokens: 800 },
+    { timestamp: new Date(Date.now() - 3*86400000).toISOString(), prompt_tokens: 8900, completion_tokens: 4100 },
+    { timestamp: new Date(Date.now() - 2*86400000).toISOString(), prompt_tokens: 12500, completion_tokens: 5600 },
+    { timestamp: new Date(Date.now() - 1*86400000).toISOString(), prompt_tokens: 11200, completion_tokens: 4900 },
+    { timestamp: new Date().toISOString(), prompt_tokens: 15400, completion_tokens: 7200 },
+];
 
 export const Analytics: React.FC = () => {
     const { currentProject } = useProject();
 
-    const { data: costAnalytics, isLoading: isCostLoading } = useQuery({
+    const { data: costAnalytics, isLoading: isCostLoading } = useQuery<AnalyticsResponse>({
         queryKey: ["analytics", "cost", currentProject?.id],
         queryFn: async () => {
-            if (!currentProject?.id) return { data: [] };
-            const res = await apiClient.get("/analytics/cost", {
+            if (!currentProject?.id) return { data: [], total_cost: 0, interval: "day" };
+            const res = await apiClient.get<AnalyticsResponse>("/analytics/cost", {
                 params: {
                     project_id: currentProject.id,
                     interval: "day",
@@ -27,19 +39,17 @@ export const Analytics: React.FC = () => {
         enabled: !!currentProject?.id,
     });
 
-    // Mock token data for demonstration until /analytics/tokens is finalized
-    const mockTokenData = [
-        { timestamp: new Date(Date.now() - 6*86400000).toISOString(), prompt_tokens: 4000, completion_tokens: 1200 },
-        { timestamp: new Date(Date.now() - 5*86400000).toISOString(), prompt_tokens: 6500, completion_tokens: 3000 },
-        { timestamp: new Date(Date.now() - 4*86400000).toISOString(), prompt_tokens: 3200, completion_tokens: 800 },
-        { timestamp: new Date(Date.now() - 3*86400000).toISOString(), prompt_tokens: 8900, completion_tokens: 4100 },
-        { timestamp: new Date(Date.now() - 2*86400000).toISOString(), prompt_tokens: 12500, completion_tokens: 5600 },
-        { timestamp: new Date(Date.now() - 1*86400000).toISOString(), prompt_tokens: 11200, completion_tokens: 4900 },
-        { timestamp: new Date().toISOString(), prompt_tokens: 15400, completion_tokens: 7200 },
-    ];
+    const totalSpend = costAnalytics?.data?.reduce((acc: number, curr: AnalyticsData) => acc + (Number(curr.total_cost) || 0), 0) || 0;
+    const totalTokens = MOCK_TOKEN_DATA.reduce((acc, curr) => acc + curr.prompt_tokens + curr.completion_tokens, 0);
 
-    const totalSpend = costAnalytics?.data?.reduce((acc: number, curr: any) => acc + (curr.total_cost || 0), 0) || 0;
-    const totalTokens = mockTokenData.reduce((acc, curr) => acc + curr.prompt_tokens + curr.completion_tokens, 0);
+    const chartData = costAnalytics?.data?.map(item => {
+        const row: Record<string, string | number> = {};
+        Object.keys(item).forEach(key => {
+            const val = item[key];
+            if (val !== undefined) row[key] = val;
+        });
+        return row;
+    }) || [];
 
     return (
         <div className="p-8 h-full flex flex-col overflow-y-auto space-y-8 font-mono">
@@ -102,7 +112,7 @@ export const Analytics: React.FC = () => {
                             </div>
                         ) : (
                             <div className="h-64">
-                                <CostChart data={costAnalytics?.data || []} />
+                                <CostChart data={chartData} />
                             </div>
                         )}
                     </div>
@@ -115,7 +125,7 @@ export const Analytics: React.FC = () => {
                     </h2>
                     <div className="bg-black border-2 border-[var(--border-primary)] p-4 shadow-[var(--shadow-sm)]">
                         <div className="h-64">
-                            <TokenUsageChart data={mockTokenData} />
+                            <TokenUsageChart data={MOCK_TOKEN_DATA} />
                         </div>
                     </div>
                 </div>

@@ -10,7 +10,7 @@ The Config singleton is initialized once and reused throughout the SDK lifecycle
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 def _env(key: str, default: str = "") -> str:

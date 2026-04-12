@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
+import type { Trace, HealthServices } from "../lib/types";
 
 // ── Shared style tokens ────────────────────────────────────────────────────────
 const S = {
@@ -48,9 +49,10 @@ const LatencyBars: React.FC<{ data: number[] }> = ({ data }) => {
   const max = Math.max(...data, 100);
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
-      {data.map((h, i) => (
-        <div key={i} style={{ flex: 1, height: `${(h / max) * 100}%`, background: h > (max * 0.7) ? "#ef4444" : "#2a2a2a", borderRadius: "2px 2px 0 0", minWidth: 0 }} />
-      ))}
+      {data.map((h, i) => {
+          const height = (h / max) * 100;
+          return <div key={i} style={{ flex: 1, height: `${height}%`, background: h > (max * 0.7) ? "#ef4444" : "#2a2a2a", borderRadius: "2px 2px 0 0", minWidth: 0 }} />;
+      })}
     </div>
   );
 };
@@ -58,7 +60,7 @@ const LatencyBars: React.FC<{ data: number[] }> = ({ data }) => {
 // ── Dashboard Page ─────────────────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   const { currentProject } = useProject();
-  const [traces, setTraces] = useState<any[]>([]);
+  const [traces, setTraces] = useState<Trace[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     avgLatency: 0,
@@ -74,13 +76,13 @@ const Dashboard: React.FC = () => {
         const response = await apiClient.get("/traces", {
           params: { project_id: currentProject.id, page_size: 15 }
         });
-        const items = response.data.items || [];
+        const items: Trace[] = response.data.items || [];
         setTraces(items);
 
         // Simple calc for stats
         const total = response.data.total || items.length;
-        const avgLat = items.length > 0 ? items.reduce((acc: number, t: any) => acc + t.duration_ms, 0) / items.length : 0;
-        const errors = items.filter((t: any) => t.status === "ERROR").length;
+        const avgLat = items.length > 0 ? items.reduce((acc: number, t: Trace) => acc + (t.duration_ms || 0), 0) / items.length : 0;
+        const errors = items.filter((t: Trace) => t.status === "ERROR").length;
         const errRate = items.length > 0 ? (errors / items.length) * 100 : 0;
 
         setStats({
@@ -100,7 +102,7 @@ const Dashboard: React.FC = () => {
   }, [currentProject]);
 
   // System Health state
-  const [health, setHealth] = useState<any>({
+  const [health, setHealth] = useState<HealthServices>({
     clickhouse: "pending",
     redis: "pending",
     collector: "pending",
@@ -113,6 +115,7 @@ const Dashboard: React.FC = () => {
         const res = await apiClient.get("/health");
         setHealth(res.data.services);
       } catch (err) {
+          console.error("Health check failed:", err);
         setHealth({
            clickhouse: "down",
            redis: "down",
@@ -179,7 +182,7 @@ const Dashboard: React.FC = () => {
           <div style={{ ...S.card, padding: 16 }}>
             <div style={S.h2}>Request Latency</div>
             <div style={{ ...S.muted, marginBottom: 12 }}>Last {traces.length} traces</div>
-            <LatencyBars data={traces.map(t => t.duration_ms)} />
+            <LatencyBars data={traces.map(t => t.duration_ms || 0)} />
             <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 6 }}>
               <span style={{ fontSize: 10, color: "#444" }}>oldest</span>
               <span style={{ fontSize: 10, color: "#444" }}>latest</span>

@@ -31,9 +31,10 @@ export interface Span {
 export interface Trace {
   trace_id: string;
   project_id: string;
+  name?: string;
   start_time: number;
   end_time: number | null;
-  duration_ms: number | null;
+  duration_ms: number;
   status: SpanStatus;
   span_count: number;
 }
@@ -74,6 +75,33 @@ export interface User {
   email: string;
   is_active: boolean;
   created_at: string;
+}
+
+export interface ModelCost {
+  model: string;
+  total_cost: number;
+  total_tokens?: number;
+}
+
+export interface AnalyticsData {
+  timestamp: string;
+  total_cost: number;
+  total_tokens?: number;
+  [key: string]: string | number | undefined; // Required for optional properties
+}
+
+export interface HealthServices {
+  clickhouse: string;
+  redis: string;
+  collector: string;
+  worker: string;
+  [key: string]: string; // Allow indexing
+}
+
+export interface AnalyticsResponse {
+  data: AnalyticsData[];
+  total_cost: number;
+  interval: string;
 }
 
 export interface PaginatedResponse<T> {

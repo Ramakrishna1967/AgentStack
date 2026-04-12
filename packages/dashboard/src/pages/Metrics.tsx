@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
+import type { Trace } from "../lib/types";
 
 interface AnalyticsData {
   total_traces: number;
@@ -92,14 +93,14 @@ const Metrics: React.FC = () => {
         const tracesRes = await apiClient.get("/traces", {
           params: { project_id: currentProject.id, page_size: 100 }
         });
-        const items = tracesRes.data.items || [];
+        const items: Trace[] = tracesRes.data.items || [];
 
         const total = tracesRes.data.total || items.length;
-        const latencies: number[] = items.map((t: any) => t.duration_ms as number);
+        const latencies: number[] = items.map((t: Trace) => (t.duration_ms || 0) as number);
         const avgLat = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 0;
-        const errors = items.filter((t: any) => t.status === "ERROR").length;
+        const errors = items.filter((t: Trace) => t.status === "ERROR").length;
         const errRate = total > 0 ? (errors / total) * 100 : 0;
-        const avgSpans = items.length > 0 ? items.reduce((a: number, t: any) => a + t.span_count, 0) / items.length : 0;
+        const avgSpans = items.length > 0 ? items.reduce((a: number, t: Trace) => a + (t.span_count || 0), 0) / items.length : 0;
 
         // p95
         const sorted = [...latencies].sort((a, b) => a - b);
