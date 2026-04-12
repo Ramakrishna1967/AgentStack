@@ -25,6 +25,8 @@ class SecurityEngine(BaseConsumer):
         redis_url: str,
         clickhouse_host: str = "localhost",
         clickhouse_port: int = 8123,
+        clickhouse_user: str = "default",
+        clickhouse_password: str = "",
     ):
         super().__init__(
             redis_url=redis_url,
@@ -35,17 +37,24 @@ class SecurityEngine(BaseConsumer):
         )
         self.clickhouse_host = clickhouse_host
         self.clickhouse_port = clickhouse_port
+        self.clickhouse_user = clickhouse_user
+        self.clickhouse_password = clickhouse_password
         self.ch_client = None
         self.alerts_stream = "alerts.live"
 
     async def start(self):
         # Initialize ClickHouse client
         try:
-            self.ch_client = get_client(host=self.clickhouse_host, port=self.clickhouse_port)
+            self.ch_client = get_client(
+                host=self.clickhouse_host, 
+                port=self.clickhouse_port,
+                username=self.clickhouse_user,
+                password=self.clickhouse_password
+            )
             logger.info(f"Connected to ClickHouse at {self.clickhouse_host}:{self.clickhouse_port}")
         except Exception as e:
             logger.error(f"Failed to connect to ClickHouse: {e}")
-            # We might want to retry or exit capability, but let's continue to start redis consumer
+            raise RuntimeError("Fatal: ClickHouse connection required for SecurityEngine")
         
         await super().start()
 
@@ -174,7 +183,10 @@ class SecurityEngine(BaseConsumer):
             # Add to alerts stream
             await self.redis.xadd(self.alerts_stream, notification)
             
-        if rows and self.ch_client:
+        if rows:
+            if not self.ch_client:
+                raise RuntimeError("Failed to save alerts: ClickHouse client is entirely missing.")
+            
             # Sync insert to CH in executor
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, self._insert_sync, rows)
@@ -196,6 +208,13 @@ if __name__ == "__main__":
     import os
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     ch_host = os.getenv("CLICKHOUSE_HOST", "localhost")
+    ch_user = os.getenv("CLICKHOUSE_USER", "default")
+    ch_pass = os.getenv("CLICKHOUSE_PASSWORD", "")
     
-    worker = SecurityEngine(redis_url=redis_url, clickhouse_host=ch_host)
+    worker = SecurityEngine(
+        redis_url=redis_url, 
+        clickhouse_host=ch_host,
+        clickhouse_user=ch_user,
+        clickhouse_password=ch_pass
+    )
     asyncio.run(worker.start())

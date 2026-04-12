@@ -9,9 +9,9 @@ import time
 from typing import TypedDict, Optional
 
 # Point SDK collector to local backend
-os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://localhost:4318"
-os.environ["AGENTSTACK_API_KEY"] = "ak_demo_wow_factor"
-os.environ["AGENTSTACK_PROJECT_ID"] = "demo-langgraph-security"
+os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://agentstack-collector:4318"
+os.environ["AGENTSTACK_API_KEY"] = "ak_agentstack_demo_key_2026"
+os.environ["AGENTSTACK_PROJECT_ID"] = "demo-simulation"
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'packages', 'sdk-python', 'src')))
 
@@ -19,13 +19,14 @@ try:
     from agentstack import init, observe
     from agentstack.tracer import Tracer
     from agentstack.context import get_current_span
-    from langgraph.graph import StateGraph, END
 except ImportError:
-    print("This example requires LangGraph and AgentStack. Please run: pip install langgraph")
-    sys.exit(1)
+    # If not in path, we'll assume it's correctly mounted in docker
+    from agentstack import init, observe
+    from agentstack.tracer import Tracer
+    from agentstack.context import get_current_span
 
 # Initialize AgentStack 
-init(api_key="ak_demo_wow_factor")
+init(api_key="ak_agentstack_demo_key_2026")
 
 class State(TypedDict):
     user_query: str

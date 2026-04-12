@@ -83,6 +83,7 @@ def init(
     enabled: bool | None = None,
     service_name: str | None = None,
     debug: bool | None = None,
+    auto_instrument: bool = True,
 ) -> None:
     """Initialize the AgentStack SDK with custom configuration.
 
@@ -108,6 +109,14 @@ def init(
         os.environ["AGENTSTACK_SERVICE_NAME"] = service_name
     if debug is not None:
         os.environ["AGENTSTACK_DEBUG"] = str(debug).lower()
+
+    # Apply auto-instrumentation if requested
+    if auto_instrument:
+        try:
+            from agentstack.frameworks import auto_instrument as perform_auto_instrument
+            perform_auto_instrument()
+        except ImportError:
+            pass # Frameworks not available in this build step
 
     # Reset singletons so they pick up new env vars
     reset_config()

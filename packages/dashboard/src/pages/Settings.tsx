@@ -1,134 +1,185 @@
 // Copyright 2026 AgentStack Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-/**
- * Settings page — API key and project management
- */
+import React, { useState, useEffect } from "react";
+import apiClient from "../lib/api";
+import { useProject } from "../components/ProjectSwitcher";
 
-import React, { useState } from "react";
-import { useProjects, useCreateProject, useDeleteProject } from "../hooks/useProject";
+const S = {
+  card: { background: "#0d0d0d", border: "1px solid #1e1e1e", borderRadius: 8 } as React.CSSProperties,
+  label: { fontSize: 11, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase" as const, fontWeight: 500 },
+  input: {
+    width: "100%", background: "#111", border: "1px solid #222", borderRadius: 6,
+    padding: "9px 12px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" as const,
+  } as React.CSSProperties,
+};
+
+interface Project { id: string; name: string; created_at: string; api_key_prefix?: string; }
 
 const Settings: React.FC = () => {
-    const { data: projects, isLoading } = useProjects();
-    const createProject = useCreateProject();
-    const deleteProject = useDeleteProject();
-    const [newProjectName, setNewProjectName] = useState("");
-    const [newApiKey, setNewApiKey] = useState<string | null>(null);
+  const { currentProject } = useProject();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [newName, setNewName] = useState("");
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    const handleCreateProject = async () => {
-        if (!newProjectName.trim()) return;
-        try {
-            const result = await createProject.mutateAsync(newProjectName.trim());
-            setNewApiKey(result.api_key);
-            setNewProjectName("");
-        } catch (err) {
-            console.error("Failed to create project:", err);
-        }
-    };
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
-    const handleDeleteProject = async (projectId: string) => {
-        if (!confirm("Delete this project and all its data?")) return;
-        try {
-            await deleteProject.mutateAsync(projectId);
-        } catch (err) {
-            console.error("Failed to delete project:", err);
-        }
-    };
+  const fetchProjects = async () => {
+    try {
+      const res = await apiClient.get("/projects");
+      setProjects(res.data);
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleCopyKey = () => {
-        if (newApiKey) {
-            navigator.clipboard.writeText(newApiKey);
-        }
-    };
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      const res = await apiClient.post("/projects", { name: newName.trim() });
+      if (res.data.api_key) {
+        setNewApiKey(res.data.api_key);
+      }
+      setNewName("");
+      fetchProjects();
+      // Reload page to refresh project switcher
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (err) {
+      console.error("Failed to create project:", err);
+      alert("Error creating project.");
+    }
+  };
 
-    return (
-        <div className="p-8 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-2">Settings</h1>
-            <p className="text-[var(--text-secondary)] mb-8">Manage projects and API keys</p>
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this project? All trace data will be permanently erased.")) return;
+    try {
+      await apiClient.delete(`/projects/${id}`);
+      fetchProjects();
+      if (currentProject?.id === id) {
+          window.location.reload();
+      }
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+      alert("Error deleting project.");
+    }
+  };
 
-            {/* Create Project */}
-            <div className="card mb-8">
-                <h2 className="text-xl font-semibold mb-4">Create Project</h2>
-                <div className="flex gap-3">
-                    <input
-                        type="text"
-                        placeholder="Project name..."
-                        value={newProjectName}
-                        onChange={(e) => setNewProjectName(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
-                        className="flex-1 px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent-blue)]"
-                    />
-                    <button
-                        onClick={handleCreateProject}
-                        disabled={createProject.isPending || !newProjectName.trim()}
-                        className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {createProject.isPending ? "Creating..." : "Create"}
-                    </button>
-                </div>
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
-                {/* Show API Key (once) */}
-                {newApiKey && (
-                    <div className="mt-4 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/30 rounded-lg p-4 animate-slide-in">
-                        <p className="text-sm font-semibold text-[var(--accent-green)] mb-2">
-                            ⚠️ Save this API key — it won't be shown again!
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <code className="flex-1 text-sm font-mono bg-[var(--bg-primary)] px-3 py-2 rounded border border-[var(--border-primary)]">
-                                {newApiKey}
-                            </code>
-                            <button onClick={handleCopyKey} className="btn-secondary text-sm px-3 py-2">
-                                Copy
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+  return (
+    <div style={{ padding: "28px", maxWidth: 760 }}>
+      <h1 style={{ fontSize: 20, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Project Settings</h1>
+      <p style={{ fontSize: 13, color: "#555", marginBottom: 24 }}>Manage API keys, projects, and account configuration.</p>
 
-            {/* Project List */}
-            <div className="card">
-                <h2 className="text-xl font-semibold mb-4">Projects</h2>
-                {isLoading ? (
-                    <div className="animate-pulse space-y-3">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-16 bg-[var(--bg-tertiary)] rounded"></div>
-                        ))}
-                    </div>
-                ) : projects?.length === 0 ? (
-                    <p className="text-[var(--text-secondary)] text-center py-8">
-                        No projects yet. Create one above.
-                    </p>
-                ) : (
-                    <div className="space-y-3">
-                        {projects?.map((project: { id: string, name: string, created_at: string }) => (
-                            <div
-                                key={project.id}
-                                className="flex items-center justify-between bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors"
-                            >
-                                <div>
-                                    <p className="font-medium">{project.name}</p>
-                                    <p className="text-xs text-[var(--text-tertiary)] font-mono">
-                                        {project.id}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xs text-[var(--text-secondary)]">
-                                        Created: {new Date(project.created_at).toLocaleDateString()}
-                                    </span>
-                                    <button
-                                        onClick={() => handleDeleteProject(project.id)}
-                                        className="text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 px-3 py-1 rounded text-sm transition-colors"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+      {/* Create project */}
+      <div style={{ ...S.card, padding: 20, marginBottom: 12 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Create New Project</div>
+        <p style={{ fontSize: 12, color: "#555", marginBottom: 16 }}>Provision an isolated project scope for a new agent deployment.</p>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            style={{ ...S.input, flex: 1 }}
+            type="text"
+            placeholder="e.g. Production Main"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleCreate()}
+          />
+          <button
+            onClick={handleCreate}
+            disabled={!newName.trim()}
+            style={{
+              background: newName.trim() ? "#fff" : "#222", color: newName.trim() ? "#000" : "#555",
+              border: "none", borderRadius: 6, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}
+          >Create</button>
         </div>
-    );
+
+        {/* API key reveal */}
+        {newApiKey && (
+          <div style={{ marginTop: 16, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 6, padding: 14 }}>
+            <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginBottom: 8 }}>✓ Project created! Save this API key — it won't be shown again</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <code style={{ flex: 1, fontSize: 12, fontFamily: "monospace", color: "#ccc", background: "#000", padding: "8px 12px", borderRadius: 4, wordBreak: "break-all", border: "1px solid #222" }}>
+                {newApiKey}
+              </code>
+              <button
+                onClick={() => handleCopy(newApiKey, "new")}
+                style={{ background: "#222", border: "1px solid #333", borderRadius: 4, color: "#ccc", padding: "8px 12px", fontSize: 12, cursor: "pointer" }}
+              >{copiedId === "new" ? "✓ Copied" : "Copy"}</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Projects list */}
+      <div style={{ ...S.card, overflow: "hidden" }}>
+        <div style={{ padding: "14px 16px", borderBottom: "1px solid #1a1a1a" }}>
+          <span style={S.label}>Active Projects ({projects.length})</span>
+        </div>
+        {loading ? (
+             <div style={{ padding: 40, textAlign: "center", color: "#444", fontSize: 13 }}>Loading...</div>
+        ) : projects.length === 0 ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#444", fontSize: 13 }}>
+            No projects yet. Create one above to get started.
+          </div>
+        ) : (
+          projects.map((project, i) => (
+            <div key={project.id} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 16px", borderBottom: i < projects.length - 1 ? "1px solid #111" : "none",
+            }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{project.name}</div>
+                <div style={{ display: "flex", gap: 16 }}>
+                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "#444" }}>ID: {project.id}</span>
+                  <span style={{ fontSize: 11, color: "#444" }}>Created: {new Date(project.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDelete(project.id)}
+                style={{ background: "transparent", border: "1px solid #2a2a2a", borderRadius: 4, color: "#ef4444", fontSize: 12, padding: "5px 12px", cursor: "pointer" }}
+              >Delete</button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Account section */}
+      <div style={{ ...S.card, padding: 20, marginTop: 12 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 16 }}>Account</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div>
+            <label style={{ ...S.label, display: "block", marginBottom: 6 }}>Email</label>
+            <input style={S.input} type="email" defaultValue="user@agentstack.dev" />
+          </div>
+          <div>
+            <label style={{ ...S.label, display: "block", marginBottom: 6 }}>Display Name</label>
+            <input style={S.input} type="text" defaultValue="User" />
+          </div>
+        </div>
+      </div>
+
+      {/* Danger zone */}
+      <div style={{ ...S.card, padding: 20, marginTop: 12, border: "1px solid rgba(239,68,68,0.2)" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#ef4444", marginBottom: 4 }}>Danger Zone</div>
+        <p style={{ fontSize: 12, color: "#555", marginBottom: 14 }}>Irreversible destructive actions. Proceed with caution.</p>
+        <button
+          onClick={() => { localStorage.removeItem("agentstack_token"); window.location.reload(); }}
+          style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6, padding: "8px 16px", fontSize: 12, cursor: "pointer" }}
+        >Sign Out</button>
+      </div>
+    </div>
+  );
 };
 
 export default Settings;

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
+import apiClient from "../lib/api";
 
 interface Project {
     id: string;
@@ -40,14 +41,27 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
  */
 export const ProjectSwitcher: React.FC = () => {
     const { currentProject, setCurrentProject } = useProject();
-    const [projects] = useState<Project[]>([
-        { id: "1", name: "Production" },
-        { id: "2", name: "Staging" },
-        { id: "3", name: "Development" },
-    ]);
+    const [projects, setProjects] = useState<Project[]>([]);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const response = await apiClient.get("/projects");
+                const items = Array.isArray(response.data) ? response.data : (response.data.items || []);
+                setProjects(items);
+                // Auto-select first project if none selected
+                if (!currentProject && items.length > 0) {
+                    setCurrentProject(items[0]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch projects:", error);
+            }
+        };
+        fetchProjects();
+    }, []);
 
     return (
-        <div className="project-switcher">
+        <div className="project-switcher" style={{ marginBottom: "16px" }}>
             <select
                 value={currentProject?.id || ""}
                 onChange={(e) => {
@@ -55,6 +69,7 @@ export const ProjectSwitcher: React.FC = () => {
                     if (project) setCurrentProject(project);
                 }}
                 className="w-full px-3 py-2 bg-black border-2 border-[var(--border-primary)] rounded-none text-[var(--text-primary)] font-mono uppercase tracking-widest cursor-pointer hover:border-[var(--accent-green)] hover:text-[var(--accent-green)] transition-none outline-none appearance-none"
+                style={{ width: "100%", background: "#000", border: "1px solid #1a1a1a", color: "#fff", fontSize: "11px", textTransform: "uppercase" }}
             >
                 <option value="" className="bg-black text-[var(--text-primary)]">SELECT_PROJECT</option>
                 {projects.map((project) => (

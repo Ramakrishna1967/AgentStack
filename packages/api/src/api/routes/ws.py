@@ -98,7 +98,7 @@ async def broadcast(message: dict) -> None:
     data = json.dumps(message)
     disconnected = set()
 
-    for ws in _connections:
+    for ws in list(_connections):
         try:
             await ws.send_text(data)
         except Exception:
@@ -131,7 +131,13 @@ async def ws_trace_feed(websocket: WebSocket):
                     await websocket.close(code=1009, reason="Message too large")
                     break
 
-                message = json.loads(data)
+                try:
+                    message = json.loads(data)
+                except json.JSONDecodeError:
+                    logger.warning("Received invalid JSON on websocket")
+                    # Send an error back instead of closing
+                    await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON format"}))
+                    continue
 
                 if message.get("type") == "ping":
                     await websocket.send_text(json.dumps({"type": "pong"}))

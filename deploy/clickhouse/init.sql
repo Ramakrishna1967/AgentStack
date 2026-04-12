@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS spans (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(start_time)
 ORDER BY (project_id, service_name, start_time, trace_id, span_id)
-TTL start_time + INTERVAL 90 DAY;
+TTL toDateTime(start_time) + INTERVAL 90 DAY;
 
 -- Security Alerts Table
 -- Stores threats detected by the Security Engine

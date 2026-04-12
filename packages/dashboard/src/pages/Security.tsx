@@ -1,115 +1,180 @@
-import React from "react";
-import { useWebSocket } from "../hooks/useWebSocket";
+// Copyright 2026 AgentStack Contributors
+// SPDX-License-Identifier: Apache-2.0
+
+import React, { useState, useEffect } from "react";
+import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
-import { SecurityPanel } from "../components/SecurityPanel";
-import { SecurityMetricsChart } from "../components/SecurityMetricsChart";
 
-export const Security: React.FC = () => {
-    const { currentProject } = useProject();
-    const { liveAlerts, isConnected } = useWebSocket(currentProject?.id);
-
-    return (
-        <div className="p-8 h-full flex flex-col overflow-y-auto space-y-8 font-mono">
-            {/* Header */}
-            <div className="flex justify-between items-end bg-black p-6 border-[3px] border-[var(--border-primary)] shadow-[var(--shadow-lg)] relative overflow-hidden">
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-extrabold tracking-widest mb-2 text-red-500 uppercase flex items-center gap-3">
-                        &gt; SECURITY_CENTER
-                    </h1>
-                    <p className="text-[var(--text-tertiary)] uppercase tracking-widest text-sm">
-                        REAL-TIME_THREAT_DETECTION_AND_VULNERABILITY_SCANNING
-                    </p>
-                </div>
-                <div className="relative z-10 flex items-center gap-3 bg-black px-4 py-2 border-2 border-[var(--border-primary)] shadow-[var(--shadow-sm)]">
-                    <div className="relative flex h-3 w-3">
-                        {isConnected && <span className="animate-[ping_1s_infinite] absolute inline-flex h-full w-full bg-[#00ff41] opacity-75"></span>}
-                        <span className={`relative inline-flex h-3 w-3 ${isConnected ? "bg-[#00ff41]" : "bg-red-500"}`}></span>
-                    </div>
-                    <span className="text-xs font-bold tracking-widest uppercase text-[var(--text-secondary)]">
-                        {isConnected ? "[SOCKET_ACTIVE]" : "[DISCONNECTED]"}
-                    </span>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 font-mono">
-                {/* Stats / Overview */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-black p-6 border-2 border-[var(--border-primary)] relative overflow-hidden group hover:border-[#00ff41] transition-none shadow-[var(--shadow-md)]">
-                        <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-widest mb-2 font-mono">
-                            [CURRENT_THREAT_LEVEL]
-                        </h3>
-                        <div className="flex items-baseline gap-3 mb-2">
-                            <div className="text-5xl font-extrabold text-[#00ff41] tracking-tight">LOW</div>
-                            <span className="text-2xl grayscale">✅</span>
-                        </div>
-                        <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">
-                            NO_CRITICAL_THREATS_DETECTED_24H
-                        </p>
-                    </div>
-
-                    <div className="bg-black p-6 border-2 border-[var(--border-primary)] relative overflow-hidden group hover:border-[var(--accent-purple)] transition-none shadow-[var(--shadow-md)]">
-                        <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-widest mb-4 flex items-center justify-between">
-                            <span>[SECURITY_TRENDS]</span>
-                            <span className="text-[10px] bg-black px-2 py-1 border border-[var(--border-secondary)]">7_DAYS</span>
-                        </h3>
-                        <div className="h-48 bg-black p-2 border-2 border-[var(--border-primary)] relative z-10 shadow-[var(--shadow-sm)]">
-                            <SecurityMetricsChart data={[
-                                { timestamp: "2026-10-01", anomalies: 2, prompt_injections: 0 },
-                                { timestamp: "2026-10-02", anomalies: 5, prompt_injections: 1 },
-                                { timestamp: "2026-10-03", anomalies: 1, prompt_injections: 0 },
-                                { timestamp: "2026-10-04", anomalies: 4, prompt_injections: 3 },
-                                { timestamp: "2026-10-05", anomalies: 2, prompt_injections: 0 },
-                                { timestamp: "2026-10-06", anomalies: 0, prompt_injections: 0 },
-                                { timestamp: "2026-10-07", anomalies: 7, prompt_injections: 2 },
-                            ]} />
-                        </div>
-                    </div>
-
-                    <div className="bg-black p-6 border-2 border-[var(--border-primary)] relative overflow-hidden shadow-[var(--shadow-md)] text-xs uppercase font-bold tracking-widest">
-                        <h3 className="text-[var(--text-tertiary)] mb-4">
-                            [ACTIVE_FIREWALL_RULES]
-                        </h3>
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center p-3 bg-black border border-[var(--border-primary)]">
-                                <span className="text-[var(--text-primary)]">Prompt_Injection_Block</span>
-                                <span className="text-black bg-[#00ff41] px-2 py-1 border border-[#00ff41]">ACTIVE</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-black border border-[var(--border-primary)]">
-                                <span className="text-[var(--text-primary)]">PII_Data_Scrubbing</span>
-                                <span className="text-black bg-[#00ff41] px-2 py-1 border border-[#00ff41]">ACTIVE</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-black border border-[var(--border-primary)]">
-                                <span className="text-[var(--text-primary)]">Anomaly_Heuristics</span>
-                                <span className="text-black bg-[#00ff41] px-2 py-1 border border-[#00ff41]">ACTIVE</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Live Feed */}
-                <div className="lg:col-span-2 flex flex-col min-h-0 bg-black border-[3px] border-[var(--border-primary)] shadow-[var(--shadow-lg)] uppercase font-mono tracking-widest text-xs font-bold overflow-hidden">
-                    <div className="bg-[var(--bg-tertiary)] border-b-2 border-[var(--border-primary)] px-6 py-4 flex justify-between items-center">
-                        <h2 className="text-[var(--text-primary)] flex items-center gap-2">
-                            <span className="text-red-500 animate-[pulse_1s_infinite] text-lg">●</span> LIVE_ALERT_FEED
-                        </h2>
-                        <span className="px-3 py-1 bg-black text-red-500 border border-red-500">
-                            {liveAlerts.length}_ALERTS
-                        </span>
-                    </div>
-                    <div className="flex-1 bg-black p-4 overflow-y-auto custom-scrollbar">
-                        {liveAlerts.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-[var(--text-tertiary)] opacity-50">
-                                <span className="text-6xl mb-4 grayscale">🛡️</span>
-                                <p className="text-sm">SYSTEM_IS_SECURE._NO_RECENT_ALERTS.</p>
-                            </div>
-                        ) : (
-                            <SecurityPanel alerts={liveAlerts} />
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+const S = {
+  card: { background: "#0d0d0d", border: "1px solid #1e1e1e", borderRadius: 8 } as React.CSSProperties,
+  label: { fontSize: 11, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase" as const, fontWeight: 500 },
 };
 
-export default Security;
+interface SecurityAlert {
+  id: string;
+  severity: string;
+  rule_name: string;
+  trace_id: string;
+  description: string;
+  created_at: string;
+  project_id: string;
+}
+
+const SeverityBadge: React.FC<{ level: string }> = ({ level }) => {
+  const colors: Record<string, { bg: string; text: string }> = {
+    CRITICAL: { bg: "rgba(239,68,68,0.12)",   text: "#ef4444" },
+    HIGH:     { bg: "rgba(245,158,11,0.12)",   text: "#f59e0b" },
+    MEDIUM:   { bg: "rgba(59,130,246,0.12)",   text: "#60a5fa" },
+    LOW:      { bg: "rgba(34,197,94,0.12)",    text: "#22c55e" },
+  };
+  const c = colors[level] || colors.LOW;
+  return (
+    <span style={{ background: c.bg, color: c.text, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em" }}>
+      {level}
+    </span>
+  );
+};
+
+const ThreatSummary: React.FC<{ alerts: SecurityAlert[] }> = ({ alerts }) => {
+  const critical = alerts.filter(a => a.severity === "CRITICAL").length;
+  const high = alerts.filter(a => a.severity === "HIGH").length;
+  let level = "Normal";
+  let color = "#22c55e";
+  let bg = "rgba(34,197,94,0.1)";
+  if (critical > 0) { level = "Critical"; color = "#ef4444"; bg = "rgba(239,68,68,0.1)"; }
+  else if (high > 0) { level = "Elevated"; color = "#f59e0b"; bg = "rgba(245,158,11,0.1)"; }
+
+  return (
+    <div style={{ ...S.card, padding: 16 }}>
+      <div style={S.label}>Current Threat Level</div>
+      <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginTop: 8, marginBottom: 4 }}>{level}</div>
+      <span style={{ fontSize: 11, color, background: bg, padding: "2px 8px", borderRadius: 4 }}>
+        {critical > 0 ? `${critical} Critical` : high > 0 ? `${high} High Alerts` : "All Clear"}
+      </span>
+      <p style={{ fontSize: 12, color: "#555", marginTop: 10, lineHeight: 1.6 }}>
+        {alerts.length === 0
+          ? "No threats detected."
+          : `${alerts.length} alert${alerts.length !== 1 ? "s" : ""} detected in the current project.`}
+      </p>
+    </div>
+  );
+};
+
+const GUARDRAILS = [
+  "Prompt Injection Filter",
+  "PII Data Scrubbing",
+  "Rate Limit Anomaly Engine",
+  "Token Explosion Detector",
+];
+
+export const Security: React.FC = () => {
+  const { currentProject } = useProject();
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!currentProject) return;
+    const fetchAlerts = async () => {
+      setLoading(true);
+      try {
+        const res = await apiClient.get("/security/alerts", {
+          params: { project_id: currentProject.id, limit: 50 },
+        });
+        setAlerts(res.data.alerts || res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch security alerts:", err);
+        setAlerts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 10000);
+    return () => clearInterval(interval);
+  }, [currentProject]);
+
+  const formatTime = (ts: string) => {
+    try { return new Date(ts).toLocaleTimeString([], { hour12: false }); }
+    catch { return ts; }
+  };
+
+  return (
+    <div style={{ padding: "28px", maxWidth: 1100 }}>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Security Control Center</h1>
+        <p style={{ fontSize: 13, color: "#555" }}>Real-time threat detection, prompt injection scanning, and PII monitoring.</p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 12 }}>
+        {/* Left column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <ThreatSummary alerts={alerts} />
+
+          {/* Guardrails */}
+          <div style={{ ...S.card, overflow: "hidden" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid #1a1a1a" }}>
+              <span style={S.label}>Active Guardrails</span>
+            </div>
+            {GUARDRAILS.map(g => (
+              <div key={g} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: "1px solid #111" }}>
+                <span style={{ fontSize: 12, color: "#aaa" }}>{g}</span>
+                <span style={{ fontSize: 10, color: "#22c55e", background: "rgba(34,197,94,0.1)", padding: "2px 8px", borderRadius: 4 }}>Active</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div style={{ ...S.card, padding: 16 }}>
+            <div style={{ ...S.label, marginBottom: 12 }}>Alert Breakdown</div>
+            {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map(sev => {
+              const count = alerts.filter(a => a.severity === sev).length;
+              const colors: Record<string, string> = { CRITICAL: "#ef4444", HIGH: "#f59e0b", MEDIUM: "#60a5fa", LOW: "#22c55e" };
+              return (
+                <div key={sev} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBlock: 6 }}>
+                  <span style={{ fontSize: 12, color: "#888" }}>{sev}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: count > 0 ? colors[sev] : "#333" }}>{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right column — Alert Feed */}
+        <div style={{ ...S.card, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #1a1a1a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: alerts.length > 0 ? "#ef4444" : "#22c55e", boxShadow: `0 0 8px ${alerts.length > 0 ? "#ef4444" : "#22c55e"}` }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Live Threat Feed</span>
+            </div>
+            <span style={{ fontSize: 11, color: alerts.length > 0 ? "#ef4444" : "#22c55e", background: alerts.length > 0 ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)", padding: "2px 10px", borderRadius: 4 }}>
+              {alerts.length} {alerts.length === 1 ? "Alert" : "Alerts"}
+            </span>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {loading ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#444", fontSize: 13 }}>Loading alerts...</div>
+            ) : alerts.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#444", fontSize: 13 }}>
+                No security alerts for this project.
+              </div>
+            ) : alerts.map((alert, i) => (
+              <div key={alert.id} style={{ padding: "14px 16px", borderBottom: i < alerts.length - 1 ? "1px solid #111" : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <SeverityBadge level={alert.severity} />
+                  <span style={{ fontSize: 12, fontFamily: "monospace", color: "#555" }}>{alert.rule_name}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, fontFamily: "monospace", color: "#444" }}>{formatTime(alert.created_at)}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "#888", lineHeight: 1.6, marginBottom: 4 }}>{alert.description}</div>
+                {alert.trace_id && (
+                  <div style={{ fontSize: 11, fontFamily: "monospace", color: "#444" }}>
+                    trace: <span style={{ color: "#666" }}>{alert.trace_id.slice(0, 8)}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

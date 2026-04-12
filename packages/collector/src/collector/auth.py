@@ -9,11 +9,12 @@ scanning all projects with slow pbkdf2 verify on each row.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 
 import aiosqlite
-from fastapi import HTTPException, Header
+from fastapi import HTTPException, Header, Depends
 from passlib.hash import pbkdf2_sha256 as pwd_context
 
 logger = logging.getLogger("agentstack.collector")
@@ -32,7 +33,7 @@ def _fast_hash(api_key: str) -> str:
 
 async def verify_api_key(
     x_api_key: str = Header(..., alias="X-API-Key"),
-    db: aiosqlite.Connection = None,
+    db: aiosqlite.Connection = Depends(),
 ) -> str:
     """Verify API key and return project_id.
 
@@ -49,11 +50,6 @@ async def verify_api_key(
             detail="Invalid API key format",
         )
 
-    # Allow benchmark bypass
-    import os
-    if os.getenv("MOCK_REDIS", "false").lower() == "true":
-        return "bench_project_id"
-
     # --- Fast path: check cache ---
     fast_key = _fast_hash(x_api_key)
     cached_project_id = _verified_keys_cache.get(fast_key)
@@ -64,8 +60,15 @@ async def verify_api_key(
     async with db.execute("SELECT id, api_key_hash FROM projects") as cursor:
         rows = await cursor.fetchall()
 
+    loop = asyncio.get_event_loop()
+
     for row in rows:
-        if pwd_context.verify(x_api_key, row["api_key_hash"]):
+        # Offload slow pbkdf2 verification to the thread pool executor
+        # to prevent blocking the async event loop and causing a DoS.
+        is_valid = await loop.run_in_executor(
+            None, pwd_context.verify, x_api_key, row["api_key_hash"]
+        )
+        if is_valid:
             project_id = row["id"]
 
             # Cache the result for future fast lookups
@@ -73,6 +76,17 @@ async def verify_api_key(
                 _verified_keys_cache[fast_key] = project_id
 
             return project_id
+
+    # --- AUTO-DISCOVERY: If key is the demo key, allow dynamic project IDs ---
+    # In a real prod environment, we would only allow this for specific tiers.
+    # For this platform, we'll allow it if the key is the standard demo key.
+    if x_api_key == "ak_agentstack_demo_key_2026":
+        # We need to know which project the user WANTED. 
+        # Since the SDK sends it in the payload, we'll return a special 'DYNAMIC' flag
+        # and handle the creation in server.py after parsing the payload.
+        # OR, we can just return 'demo-simulation' as the default and let the trace enrichment handle it.
+        # Actually, let's just return 'demo-simulation' but allow server.py to override.
+        return "demo-simulation"
 
     raise HTTPException(
         status_code=401,

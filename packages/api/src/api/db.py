@@ -16,8 +16,25 @@ from typing import AsyncGenerator
 
 logger = logging.getLogger("agentstack.api")
 
-# Default database location
-_DEFAULT_DB_PATH = Path.cwd() / "agentstack.db"
+# Default database location logic
+from api.config import settings
+import os
+
+def _get_default_db_path() -> Path:
+    db_url = settings.DATABASE_URL
+    if db_url.startswith("sqlite"):
+        # Handle sqlite+aiosqlite:///data/agentstack.db (relative) 
+        # or sqlite+aiosqlite:////data/agentstack.db (absolute)
+        if "////" in db_url:
+            return Path("/" + db_url.split("////")[-1])
+        elif "///" in db_url:
+            path_str = db_url.split("///")[-1]
+            if path_str.startswith("/"):
+                return Path(path_str)
+            return Path("/app") / path_str # Force absolute to /app if relative
+    return Path("/app/agentstack.db")
+
+_DEFAULT_DB_PATH = _get_default_db_path()
 
 
 class Database:
@@ -47,6 +64,19 @@ class Database:
                     api_key_hash TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Users table (for dashboard auth)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    hashed_password TEXT NOT NULL,
+                    is_active BOOLEAN DEFAULT 1,
+                    failed_login_attempts INTEGER DEFAULT 0,
+                    locked_until TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
 
@@ -140,16 +170,13 @@ class Database:
                 ON security_alerts(project_id, severity, created_at DESC)
             """)
 
-            # Users table (for dashboard auth)
-            await conn.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id TEXT PRIMARY KEY,
-                    email TEXT UNIQUE NOT NULL,
-                    hashed_password TEXT NOT NULL,
-                    is_active BOOLEAN DEFAULT 1,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+
+
+            try:
+                await conn.execute("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
+                await conn.execute("ALTER TABLE users ADD COLUMN locked_until TIMESTAMP")
+            except Exception:
+                pass
 
             await conn.commit()
             self._initialized = True

@@ -78,14 +78,13 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
         REDACTED_EMAIL,
     ),
-    # Phone numbers: various formats
-    # +1-555-123-4567, (555) 123-4567, 555.123.4567, 555-123-4567
+    # Phone numbers: Require separators to reduce false positives
     (
         re.compile(
-            r"(?:\+?\d{1,3}[-.\s]?)?"  # optional country code
-            r"(?:\(\d{3}\)|\d{3})"      # area code
-            r"[-.\s]?\d{3}"             # prefix
-            r"[-.\s]?\d{4}\b"           # line number
+            r"(?:^|\s|\b)(\+?\d{1,3}[-.\s]?)?" 
+            r"(\(\d{3}\)|\d{3})"
+            r"[-.\s]\d{3}"  # Require separators here
+            r"[-.\s]\d{4}\b"
         ),
         REDACTED_PHONE,
     ),

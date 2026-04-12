@@ -26,46 +26,55 @@ from api.schemas import (
 router = APIRouter()
 logger = logging.getLogger("agentstack.api")
 
-# --- HIGH-2 + LOW-1: In-memory rate limiter & lockout ---
-# Production should use Redis for these, but this works for MVP.
-_login_attempts: dict[str, list[float]] = {}  # email -> [timestamps]
+# --- HIGH-2 + LOW-1: Rate limiter & lockout ---
 _MAX_LOGIN_ATTEMPTS = 5
 _LOCKOUT_SECONDS = 900  # 15 minutes
-_RATE_WINDOW_SECONDS = 300  # 5-minute window for attempt counting
 
 
-def _check_login_rate_limit(email: str) -> None:
+async def _check_login_rate_limit(email: str, db: aiosqlite.Connection) -> None:
     """Check if the email is rate-limited due to too many failed logins."""
-    import time
-
-    now = time.time()
-    attempts = _login_attempts.get(email, [])
-
-    # Clean old attempts outside the window
-    attempts = [t for t in attempts if now - t < _LOCKOUT_SECONDS]
-    _login_attempts[email] = attempts
-
-    if len(attempts) >= _MAX_LOGIN_ATTEMPTS:
-        oldest = min(attempts)
-        remaining = int(_LOCKOUT_SECONDS - (now - oldest))
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Too many login attempts. Try again in {remaining} seconds.",
-        )
+    async with db.execute("SELECT locked_until FROM users WHERE email = ?", (email,)) as cursor:
+        row = await cursor.fetchone()
+    if row and row["locked_until"]:
+        locked_until = datetime.fromisoformat(row["locked_until"])
+        now = datetime.now(timezone.utc)
+        if now < locked_until:
+            remaining = int((locked_until - now).total_seconds())
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Too many login attempts. Try again in {remaining} seconds.",
+            )
 
 
-def _record_failed_login(email: str) -> None:
+async def _record_failed_login(email: str, db: aiosqlite.Connection) -> None:
     """Record a failed login attempt."""
-    import time
+    async with db.execute("SELECT failed_login_attempts FROM users WHERE email = ?", (email,)) as cursor:
+        row = await cursor.fetchone()
+    if not row:
+        return
+    
+    attempts = row["failed_login_attempts"] + 1
+    if attempts >= _MAX_LOGIN_ATTEMPTS:
+        locked_until = datetime.now(timezone.utc) + timedelta(seconds=_LOCKOUT_SECONDS)
+        await db.execute(
+            "UPDATE users SET failed_login_attempts = ?, locked_until = ? WHERE email = ?",
+            (attempts, locked_until.isoformat(), email)
+        )
+    else:
+        await db.execute(
+            "UPDATE users SET failed_login_attempts = ? WHERE email = ?",
+            (attempts, email)
+        )
+    await db.commit()
 
-    if email not in _login_attempts:
-        _login_attempts[email] = []
-    _login_attempts[email].append(time.time())
 
-
-def _clear_login_attempts(email: str) -> None:
+async def _clear_login_attempts(email: str, db: aiosqlite.Connection) -> None:
     """Clear login attempts on successful login."""
-    _login_attempts.pop(email, None)
+    await db.execute(
+        "UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE email = ?",
+        (email,)
+    )
+    await db.commit()
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -139,7 +148,7 @@ async def login(
     Rate-limited to 5 attempts per email per 15 minutes.
     """
     # --- HIGH-2 FIX: Rate limiting ---
-    _check_login_rate_limit(request_body.email)
+    await _check_login_rate_limit(request_body.email, db)
 
     # Fetch user
     async with db.execute(
@@ -149,7 +158,7 @@ async def login(
         user_row = await cursor.fetchone()
 
     if not user_row:
-        _record_failed_login(request_body.email)
+        await _record_failed_login(request_body.email, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -159,7 +168,7 @@ async def login(
 
     # Verify password
     if not pwd_context.verify(request_body.password, user["hashed_password"]):
-        _record_failed_login(request_body.email)
+        await _record_failed_login(request_body.email, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -172,7 +181,7 @@ async def login(
         )
 
     # --- LOW-1 FIX: Clear lockout on success ---
-    _clear_login_attempts(request_body.email)
+    await _clear_login_attempts(request_body.email, db)
 
     # Create access token
     access_token = create_access_token(data={"sub": user["id"]})

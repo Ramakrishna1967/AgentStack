@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List
 
 from api.db import get_db
+from api.db_clickhouse import get_clickhouse, ClickHouseClient
 from api.dependencies import get_current_active_user
 from api.schemas import TraceSchema, TraceDetailSchema, SpanSchema, SpanStatus
 
@@ -25,73 +26,72 @@ async def list_traces(
     end_date: int | None = Query(None, description="Unix timestamp in nanoseconds"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_active_user),
+    ch: ClickHouseClient = Depends(get_clickhouse),
 ):
-    """List traces with pagination and filters.
-
-    Filters: project_id, status, date range.
-    Returns paginated list of traces.
-    """
+    """List traces with pagination and filters by querying ClickHouse spans."""
     # Build query
-    where_clauses = []
-    params = []
+    filters = []
+    params = {}
 
     if project_id:
-        where_clauses.append("project_id = ?")
-        params.append(project_id)
+        filters.append("project_id = {project_id:String}")
+        params["project_id"] = project_id
 
     if status:
-        where_clauses.append("status = ?")
-        params.append(status)
+        filters.append("status = {status:String}")
+        params["status"] = status
 
+    # start_date/end_date are in nanoseconds (Unix nano)
+    # ClickHouse start_time is DateTime64(6) - microseconds
     if start_date:
-        where_clauses.append("start_time >= ?")
-        params.append(start_date)
+        filters.append("start_time >= {start_date:Int64} / 1000")
+        params["start_date"] = start_date
 
     if end_date:
-        where_clauses.append("start_time <= ?")
-        params.append(end_date)
+        filters.append("start_time <= {end_date:Int64} / 1000")
+        params["end_date"] = end_date
 
-    where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+    where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
 
-    # Count total
-    count_query = f"SELECT COUNT(*) FROM traces {where_sql}"
-    async with db.execute(count_query, params) as cursor:
-        row = await cursor.fetchone()
-        total = row[0]
+    # Group spans into traces
+    inner_query = f"""
+        SELECT 
+            trace_id, 
+            project_id, 
+            min(start_time) as start_time, 
+            max(end_time) as end_time, 
+            count(*) as span_count,
+            any(status) as status
+        FROM spans
+        {where_sql}
+        GROUP BY trace_id, project_id
+    """
 
-    # Fetch page
+    # Get total count (number of unique trace_ids)
+    count_query = f"SELECT count() as total FROM ({inner_query})"
+    count_res = await ch.execute(count_query, params)
+    total = count_res[0]['total'] if count_res else 0
+
+    # Fetch paginated results
     offset = (page - 1) * page_size
     query = f"""
-        SELECT trace_id, project_id, start_time, end_time, duration_ms, status, created_at
-        FROM traces
-        {where_sql}
-        ORDER BY created_at DESC
-        LIMIT ? OFFSET ?
+        SELECT * FROM ({inner_query})
+        ORDER BY start_time DESC
+        LIMIT {page_size} OFFSET {offset}
     """
-    params.extend([page_size, offset])
-
-    async with db.execute(query, params) as cursor:
-        rows = await cursor.fetchall()
+    rows = await ch.execute(query, params)
 
     traces = []
     for row in rows:
-        # Count spans for this trace
-        async with db.execute(
-            "SELECT COUNT(*) FROM spans WHERE trace_id = ?", (row["trace_id"],)
-        ) as span_cursor:
-            span_count_row = await span_cursor.fetchone()
-            span_count = span_count_row[0]
-
+        # Convert ClickHouse datetime/duration to frontend format
         traces.append({
             "trace_id": row["trace_id"],
             "project_id": row["project_id"],
-            "start_time": row["start_time"],
-            "end_time": row["end_time"],
-            "duration_ms": row["duration_ms"],
+            "start_time": int(row["start_time"].timestamp() * 1e9), # Back to nano
+            "end_time": int(row["end_time"].timestamp() * 1e9),
+            "duration_ms": (row["end_time"] - row["start_time"]).total_seconds() * 1000,
             "status": row["status"],
-            "span_count": span_count,
+            "span_count": row["span_count"],
         })
 
     return {
@@ -106,63 +106,53 @@ async def list_traces(
 @router.get("/traces/{trace_id}", response_model=TraceDetailSchema)
 async def get_trace_detail(
     trace_id: str,
-    db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_active_user),
+    ch: ClickHouseClient = Depends(get_clickhouse),
 ):
-    """Get full trace detail with all spans in tree structure."""
-    # Fetch trace
-    async with db.execute(
-        "SELECT trace_id, project_id, start_time, end_time, duration_ms, status FROM traces WHERE trace_id = ?",
-        (trace_id,),
-    ) as cursor:
-        trace_row = await cursor.fetchone()
+    """Get full trace detail with all spans from ClickHouse."""
+    # Fetch all spans for trace
+    query = "SELECT * FROM spans WHERE trace_id = {trace_id:String} ORDER BY start_time ASC"
+    span_rows = await ch.execute(query, {"trace_id": trace_id})
 
-    if not trace_row:
+    if not span_rows:
         raise HTTPException(status_code=404, detail="Trace not found")
 
-    # Fetch all spans
-    async with db.execute(
-        """
-        SELECT span_id, trace_id, parent_span_id, project_id, name, start_time, end_time,
-               duration_ms, status, service_name, attributes, events
-        FROM spans
-        WHERE trace_id = ?
-        ORDER BY start_time ASC
-        """,
-        (trace_id,),
-    ) as cursor:
-        span_rows = await cursor.fetchall()
-
     spans = []
+    min_start = None
+    max_end = None
+    final_status = SpanStatus.OK
+
     for row in span_rows:
-        # Parse JSON fields
-        attributes = json.loads(row["attributes"]) if row["attributes"] else {}
-        events = json.loads(row["events"]) if row["events"] else []
+        start_ns = int(row["start_time"].timestamp() * 1e9)
+        end_ns = int(row["end_time"].timestamp() * 1e9)
+        
+        if min_start is None or start_ns < min_start: min_start = start_ns
+        if max_end is None or end_ns > max_end: max_end = end_ns
+        if row["status"] == "ERROR": final_status = SpanStatus.ERROR
 
         spans.append(
             SpanSchema(
                 span_id=row["span_id"],
                 trace_id=row["trace_id"],
-                parent_span_id=row["parent_span_id"],
+                parent_span_id=row["parent_span_id"] or None,
                 name=row["name"],
-                start_time=row["start_time"],
-                end_time=row["end_time"],
+                start_time=start_ns,
+                end_time=end_ns,
                 duration_ms=row["duration_ms"],
                 status=SpanStatus(row["status"]),
                 service_name=row["service_name"] or "default",
-                attributes=attributes,
-                events=events,
+                attributes=row["attributes"],
+                events=json.loads(row["events"]) if row["events"] else [],
                 project_id=row["project_id"],
             )
         )
 
     return TraceDetailSchema(
-        trace_id=trace_row["trace_id"],
-        project_id=trace_row["project_id"],
-        start_time=trace_row["start_time"],
-        end_time=trace_row["end_time"],
-        duration_ms=trace_row["duration_ms"],
-        status=SpanStatus(trace_row["status"]),
+        trace_id=trace_id,
+        project_id=span_rows[0]["project_id"],
+        start_time=min_start,
+        end_time=max_end,
+        duration_ms=(max_end - min_start) / 1e6 if min_start and max_end else 0,
+        status=final_status,
         spans=spans,
     )
 
@@ -170,7 +160,6 @@ async def get_trace_detail(
 async def get_trace_replay(
     trace_id: str,
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_active_user),
 ):
     """Get ordered spans for a trace to support Time Machine replay."""
     # Fetch all spans for the trace ordered precisely by start_time

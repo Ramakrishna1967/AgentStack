@@ -82,19 +82,14 @@ async def create_project(
 @router.get("/projects", response_model=list[ProjectSchema])
 async def list_projects(
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_active_user),
 ):
-    """List projects owned by the current user."""
-    # HIGH-5 FIX: Only return projects the user owns
+    """List all projects for the demo."""
     async with db.execute(
         """
-        SELECT p.id, p.name, p.created_at, p.updated_at
-        FROM projects p
-        INNER JOIN user_projects up ON p.id = up.project_id
-        WHERE up.user_id = ?
-        ORDER BY p.created_at DESC
-        """,
-        (current_user["id"],),
+        SELECT id, name, created_at, updated_at
+        FROM projects
+        ORDER BY created_at DESC
+        """
     ) as cursor:
         rows = await cursor.fetchall()
 
@@ -113,18 +108,15 @@ async def list_projects(
 async def get_project(
     project_id: str,
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_active_user),
 ):
-    """Get project by ID (only if owned by current user)."""
-    # HIGH-5 FIX: Verify ownership
+    """Get project by ID."""
     async with db.execute(
         """
-        SELECT p.id, p.name, p.created_at, p.updated_at
-        FROM projects p
-        INNER JOIN user_projects up ON p.id = up.project_id
-        WHERE p.id = ? AND up.user_id = ?
+        SELECT id, name, created_at, updated_at
+        FROM projects
+        WHERE id = ?
         """,
-        (project_id, current_user["id"]),
+        (project_id,),
     ) as cursor:
         row = await cursor.fetchone()
 

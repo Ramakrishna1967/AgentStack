@@ -1,164 +1,230 @@
 // Copyright 2026 AgentStack Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-/**
- * Dashboard page with metrics overview
- */
-
-import React from "react";
-import { useDashboardMetrics } from "../hooks/useTraces";
+import React, { useState, useEffect } from "react";
+import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
-import { TraceLatencyChart } from "../components/TraceLatencyChart";
 
-const Dashboard: React.FC = () => {
-    const { currentProject } = useProject();
-    const { data: metrics, isLoading, error } = useDashboardMetrics(currentProject?.id);
-
-    if (isLoading) {
-        return (
-            <div className="p-8">
-                <div className="animate-pulse">
-                    <div className="h-8 bg-[var(--bg-secondary)] rounded w-48 mb-8"></div>
-                    <div className="grid grid-cols-4 gap-6">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="h-32 bg-[var(--bg-secondary)] rounded"></div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-8">
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                    <p className="text-red-500">Failed to load metrics</p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="p-8 space-y-8 font-mono">
-            {/* Header */}
-            <div className="flex justify-between items-end bg-black p-6 border-[3px] border-[var(--border-primary)] shadow-[var(--shadow-lg)] relative overflow-hidden">
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-[var(--accent-green)] uppercase">
-                        &gt; Dashboard
-                    </h1>
-                    <p className="text-[var(--text-tertiary)] text-lg uppercase tracking-widest">
-                        {currentProject ? (
-                            <span className="flex items-center gap-2">
-                                <span className="w-2 h-2 bg-[var(--accent-green)] animate-[pulse_1s_infinite]"></span>
-                                STATUS: <span className="text-white font-medium">{currentProject.name}</span>_ONLINE
-                            </span>
-                        ) : "ERROR: NO_PROJECT_SELECTED"}
-                    </p>
-                </div>
-                <div className="relative z-10">
-                    <button className="btn-primary flex items-center gap-2">
-                        <span>[LIVE_STREAM]</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Metrics Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard
-                    title="Total Traces"
-                    value={metrics?.totalTraces.toLocaleString() || "0"}
-                    icon="📊"
-                    trend="+12%"
-                />
-                <MetricCard
-                    title="Error Rate"
-                    value={`${metrics?.errorRate || "0"}%`}
-                    icon="⚠️"
-                    trend="-2.4%"
-                />
-                <MetricCard
-                    title="Avg Latency"
-                    value={`${metrics?.avgLatency || "0"}ms`}
-                    icon="⚡"
-                    trend="-15ms"
-                />
-                <MetricCard
-                    title="Total Cost"
-                    value={`$${metrics?.totalCost || "0.00"}`}
-                    icon="💰"
-                    trend="+$1.40"
-                />
-            </div>
-
-            {/* Activity Section */}
-            <div className="grid grid-cols-1 gap-6">
-                <div className="card border-2 border-[var(--border-primary)] shadow-[var(--shadow-lg)] relative overflow-hidden group">
-                    <div className="relative z-10 flex justify-between items-center mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-[var(--text-primary)] uppercase tracking-widest">&gt; Trace_Latency_Overview</h2>
-                            <p className="text-[var(--text-tertiary)] mt-1 uppercase text-sm">
-                                [SYSMSG] Performance scatter mapping initialized.
-                            </p>
-                        </div>
-                        <span className="px-3 py-1 text-xs font-bold bg-[var(--accent-green)] text-black border border-[var(--accent-green)] uppercase tracking-widest">
-                            Real-time
-                        </span>
-                    </div>
-
-                    <div className="h-96 w-full relative z-10 bg-[var(--bg-primary)]/50 rounded-xl p-4 border border-[var(--border-primary)] shadow-inner">
-                        <TraceLatencyChart data={[
-                            { name: "VectorDB Query", latency: 500, category: "tool" },
-                            { name: "Web Search", latency: 1200, category: "tool" },
-                            { name: "GPT-4 (Summarize)", latency: 2500, category: "llm" },
-                            { name: "Claude 3 (Email)", latency: 3100, category: "llm" },
-                            { name: "Format Output", latency: 50, category: "internal" },
-                            { name: "DB Lookup", latency: 250, category: "tool" },
-                            { name: "GPT-4 (Refine)", latency: 1800, category: "llm" },
-                            { name: "State Save", latency: 10, category: "internal" },
-                        ]} />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+// ── Shared style tokens ────────────────────────────────────────────────────────
+const S = {
+  card: { background: "#0d0d0d", border: "1px solid #1e1e1e", borderRadius: 8 } as React.CSSProperties,
+  label: { fontSize: 11, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase" as const, fontWeight: 500 },
+  h2: { fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 4 } as React.CSSProperties,
+  muted: { fontSize: 12, color: "#555" } as React.CSSProperties,
 };
 
-interface MetricCardProps {
-    title: string;
-    value: string;
-    icon: string;
-    trend?: string;
-}
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+const Sparkline: React.FC<{ path: string }> = ({ path }) => (
+  <svg width="100%" height="30" viewBox="0 0 120 30" preserveAspectRatio="none">
+    <path d={path} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
-const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, trend }) => {
-    const isPositiveTrend = trend?.startsWith('+');
+const SPARKLINES = {
+  rising: "M0 28 C20 22 40 18 60 12 C80 6 100 4 120 2",
+  falling: "M0 4 C20 8 40 14 60 18 C80 22 100 26 120 28",
+  flat: "M0 15 C20 12 40 18 60 15 C80 12 100 18 120 15",
+  wavy: "M0 18 C15 8 30 28 45 18 C60 8 75 28 90 18 C105 8 115 14 120 15",
+};
 
-    return (
-        <div className="card group cursor-pointer relative overflow-hidden border-[3px] border-[var(--border-primary)] hover:border-[var(--accent-green)] shadow-[var(--shadow-md)] bg-black transition-none hover:translate-x-1 hover:-translate-y-1">
-            <div className="relative z-10 flex items-start justify-between mb-4">
-                <div>
-                    <h3 className="text-xs font-bold tracking-widest text-[var(--text-tertiary)] uppercase mb-2 group-hover:text-white transition-colors">[{title}]</h3>
-                    <div className="flex items-baseline gap-3">
-                        <p className="text-3xl font-extrabold tracking-tight text-[var(--accent-green)]">{value}</p>
-                        {trend && (
-                            <span className={`text-xs font-bold px-2 py-1 bg-transparent border-b-2 ${isPositiveTrend ? 'text-[var(--accent-green)] border-[var(--accent-green)]' : 'text-[var(--accent-red)] border-[var(--accent-red)]'}`}>
-                                {trend}
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <div className="p-3 bg-transparent border-[2px] border-[var(--border-primary)] shadow-[var(--shadow-sm)] group-hover:border-[var(--accent-green)] transition-none">
-                    <span className="text-2xl block grayscale">{icon}</span>
-                </div>
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+const StatCard: React.FC<{
+  label: string; value: string; change: string; up: boolean; spark: string;
+}> = ({ label, value, change, up, spark }) => (
+  <div style={{ ...S.card, padding: "20px 18px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <span style={S.label}>{label}</span>
+      <span style={{ fontSize: 11, color: up ? "#22c55e" : "#ef4444", display: "flex", alignItems: "center", gap: 2 }}>
+        {up ? "↑" : "↓"} {change}
+      </span>
+    </div>
+    <div style={{ fontSize: 32, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{value}</div>
+    <div style={{ marginTop: 8 }}><Sparkline path={spark} /></div>
+  </div>
+);
+
+// ── Bar Chart for latency ─────────────────────────────────────────────────────
+const LatencyBars: React.FC<{ data: number[] }> = ({ data }) => {
+  const max = Math.max(...data, 100);
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
+      {data.map((h, i) => (
+        <div key={i} style={{ flex: 1, height: `${(h / max) * 100}%`, background: h > (max * 0.7) ? "#ef4444" : "#2a2a2a", borderRadius: "2px 2px 0 0", minWidth: 0 }} />
+      ))}
+    </div>
+  );
+};
+
+// ── Dashboard Page ─────────────────────────────────────────────────────────────
+const Dashboard: React.FC = () => {
+  const { currentProject } = useProject();
+  const [traces, setTraces] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    avgLatency: 0,
+    errorRate: 0,
+    totalCost: 0
+  });
+
+  useEffect(() => {
+    if (!currentProject) return;
+
+    const fetchData = async () => {
+      try {
+        const response = await apiClient.get("/traces", {
+          params: { project_id: currentProject.id, page_size: 15 }
+        });
+        const items = response.data.items || [];
+        setTraces(items);
+
+        // Simple calc for stats
+        const total = response.data.total || items.length;
+        const avgLat = items.length > 0 ? items.reduce((acc: number, t: any) => acc + t.duration_ms, 0) / items.length : 0;
+        const errors = items.filter((t: any) => t.status === "ERROR").length;
+        const errRate = items.length > 0 ? (errors / items.length) * 100 : 0;
+
+        setStats({
+          total,
+          avgLatency: avgLat, // Fix: avgLat is already in ms, then UI converts to s
+          errorRate: errRate,
+          totalCost: 0.00 // Placeholder for cost engine integration
+        });
+      } catch (err) {
+        console.error("Dashboard data fetch failed:", err);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // Poll every 5s
+    return () => clearInterval(interval);
+  }, [currentProject]);
+
+  // System Health state
+  const [health, setHealth] = useState<any>({
+    clickhouse: "pending",
+    redis: "pending",
+    collector: "pending",
+    worker: "pending"
+  });
+
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const res = await apiClient.get("/health");
+        setHealth(res.data.services);
+      } catch (err) {
+        setHealth({
+           clickhouse: "down",
+           redis: "down",
+           collector: "down",
+           worker: "down"
+        });
+      }
+    };
+    fetchHealth();
+    const hInterval = setInterval(fetchHealth, 15000);
+    return () => clearInterval(hInterval);
+  }, []);
+
+  return (
+    <div style={{ padding: "28px 28px", maxWidth: 1100 }}>
+      {/* KPI row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Traces" value={stats.total.toLocaleString()} change="N/A" up={true} spark={SPARKLINES.rising} />
+        <StatCard label="Avg Latency" value={`${(stats.avgLatency / 1000).toFixed(2)}s`} change="N/A" up={true} spark={SPARKLINES.wavy} />
+        <StatCard label="Error Rate" value={`${stats.errorRate.toFixed(1)}%`} change="N/A" up={false} spark={SPARKLINES.falling} />
+        <StatCard label="Total Cost" value={`$${stats.totalCost.toFixed(2)}`} change="N/A" up={false} spark={SPARKLINES.flat} />
+      </div>
+
+      {/* Main content row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 12 }}>
+        {/* Live Traces */}
+        <div style={{ ...S.card }}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #1a1a1a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Live Trace Feed</span>
             </div>
-
-            {/* Interactive Bottom Bar */}
-            <div className="absolute bottom-0 left-0 h-2 w-full bg-[var(--border-primary)] overflow-hidden">
-                <div className="h-full w-0 group-hover:w-full bg-[var(--accent-green)] transition-all duration-300 ease-linear"></div>
-            </div>
+            <span style={{ fontSize: 11, color: "#555" }}>{currentProject?.name || "No Project"}</span>
+          </div>
+          <div style={{ minHeight: 400 }}>
+            {traces.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#444", fontSize: 13 }}>No traces found for this project. Run a simulation to see data.</div>
+            ) : (
+              traces.map((item, i) => (
+                <div key={item.trace_id} style={{
+                  display: "flex", alignItems: "center", padding: "12px 16px",
+                  borderBottom: i < traces.length - 1 ? "1px solid #111" : "none",
+                  gap: 12,
+                }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                    background: item.status === "OK" ? "#22c55e" : item.status === "ERROR" ? "#ef4444" : "#f59e0b",
+                  }} />
+                  <span style={{ fontSize: 12, fontFamily: "monospace", color: "#777", width: 85, flexShrink: 0 }}>{item.trace_id.slice(0, 8)}</span>
+                  <span style={{ fontSize: 13, color: "#ccc", flex: 1 }}>{item.name || "Agent Run"}</span>
+                  <span style={{ fontSize: 12, color: "#555", fontFamily: "monospace" }}>{(item.duration_ms / 1000).toFixed(2)}s</span>
+                  <span style={{ fontSize: 11, color: "#444", fontFamily: "monospace" }}>
+                    {new Date(item.start_time / 1e6).toLocaleTimeString([], { hour12: false })}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-    );
+
+        {/* Right sidebar panel */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Latency chart */}
+          <div style={{ ...S.card, padding: 16 }}>
+            <div style={S.h2}>Request Latency</div>
+            <div style={{ ...S.muted, marginBottom: 12 }}>Last {traces.length} traces</div>
+            <LatencyBars data={traces.map(t => t.duration_ms)} />
+            <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 6 }}>
+              <span style={{ fontSize: 10, color: "#444" }}>oldest</span>
+              <span style={{ fontSize: 10, color: "#444" }}>latest</span>
+            </div>
+          </div>
+
+          {/* System status */}
+          <div style={{ ...S.card, padding: 16 }}>
+            <div style={S.h2}>System Status</div>
+            {[
+              { id: "collector", label: "Collector API" },
+              { id: "redis", label: "Redis Stream" },
+              { id: "clickhouse", label: "ClickHouse DB" },
+              { id: "worker", label: "Security Engine" },
+            ].map(item => {
+              const status = health[item.id] || "operational";
+              const isOk = status === "operational";
+              const color = isOk ? "#22c55e" : "#ef4444";
+              return (
+                <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBlock: 8, borderBottom: "1px solid #111" }}>
+                  <span style={{ fontSize: 12, color: "#888" }}>{item.label}</span>
+                  <span style={{ fontSize: 11, color, display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize" }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+                    {status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Quick start snippet */}
+          <div style={{ ...S.card, padding: 16 }}>
+            <div style={S.h2}>Quick Start</div>
+            <pre style={{ fontSize: 11, color: "#888", fontFamily: "monospace", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
+              <span style={{ color: "#a78bfa" }}>from</span> agentstack <span style={{ color: "#a78bfa" }}>import</span> observe{"\n\n"}
+              <span style={{ color: "#555" }}># Wrap any function</span>{"\n"}
+              @observe{"\n"}
+              <span style={{ color: "#a78bfa" }}>def</span> <span style={{ color: "#93c5fd" }}>my_agent</span>(q):{"\n"}
+              {"  "}<span style={{ color: "#a78bfa" }}>return</span> llm.chat(q)
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

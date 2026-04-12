@@ -241,10 +241,11 @@ class LocalStore:
     def unsent_count(self) -> int:
         """Number of unsent spans in the store."""
         try:
-            conn = self._get_conn()
-            cursor = conn.execute("SELECT COUNT(*) FROM spans WHERE sent = 0")
-            count = cursor.fetchone()[0]
-            conn.close()
+            with self._lock:
+                conn = self._get_conn()
+                cursor = conn.execute("SELECT COUNT(*) FROM spans WHERE sent = 0")
+                count = cursor.fetchone()[0]
+                conn.close()
             return count
         except Exception:
             return 0
@@ -253,10 +254,11 @@ class LocalStore:
     def total_count(self) -> int:
         """Total number of spans in the store."""
         try:
-            conn = self._get_conn()
-            cursor = conn.execute("SELECT COUNT(*) FROM spans")
-            count = cursor.fetchone()[0]
-            conn.close()
+            with self._lock:
+                conn = self._get_conn()
+                cursor = conn.execute("SELECT COUNT(*) FROM spans")
+                count = cursor.fetchone()[0]
+                conn.close()
             return count
         except Exception:
             return 0

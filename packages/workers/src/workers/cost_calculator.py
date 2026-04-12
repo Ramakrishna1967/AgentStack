@@ -35,6 +35,8 @@ class CostCalculator(BaseConsumer):
         redis_url: str,
         clickhouse_host: str = "localhost",
         clickhouse_port: int = 8123,
+        clickhouse_user: str = "default",
+        clickhouse_password: str = "",
         batch_size: int = 100,
         flush_interval: float = 5.0, # Less urgent than security alerts
     ):
@@ -44,15 +46,23 @@ class CostCalculator(BaseConsumer):
             group_name="cost-group",
             consumer_name=f"worker-cost-{uuid.uuid4().hex[:8]}",
             batch_size=batch_size, 
+            auto_ack=False,
         )
         self.clickhouse_host = clickhouse_host
         self.clickhouse_port = clickhouse_port
+        self.clickhouse_user = clickhouse_user
+        self.clickhouse_password = clickhouse_password
         self.ch_client = None
         self.buffer = []
         self.last_flush = time.time()
 
     async def start(self):
-        self.ch_client = get_client(host=self.clickhouse_host, port=self.clickhouse_port)
+        self.ch_client = get_client(
+            host=self.clickhouse_host, 
+            port=self.clickhouse_port,
+            username=self.clickhouse_user,
+            password=self.clickhouse_password
+        )
         logger.info(f"Connected to ClickHouse at {self.clickhouse_host}:{self.clickhouse_port}")
         await super().start()
 
@@ -70,6 +80,11 @@ class CostCalculator(BaseConsumer):
 
         # Check flush conditions
         if len(self.buffer) >= self.batch_size or (time.time() - self.last_flush) >= 1.0:
+            await self.flush_buffer()
+
+    async def on_idle(self):
+        """Called when no messages are received from Redis."""
+        if self.buffer and (time.time() - self.last_flush) >= 1.0:
             await self.flush_buffer()
 
     def calculate_cost(self, message_id: bytes, span: dict):
@@ -113,7 +128,7 @@ class CostCalculator(BaseConsumer):
             "project_id": span.get("project_id", "unknown"),
             "model": model,
             "span_kind": "llm",
-            "timestamp": span.get("start_time"), # Use start_time
+            "timestamp": span.get("start_time", 0) // 1_000_000_000, # Convert ns to seconds
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
@@ -178,6 +193,13 @@ if __name__ == "__main__":
     import os
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     ch_host = os.getenv("CLICKHOUSE_HOST", "localhost")
+    ch_user = os.getenv("CLICKHOUSE_USER", "default")
+    ch_pass = os.getenv("CLICKHOUSE_PASSWORD", "")
     
-    worker = CostCalculator(redis_url=redis_url, clickhouse_host=ch_host)
+    worker = CostCalculator(
+        redis_url=redis_url, 
+        clickhouse_host=ch_host,
+        clickhouse_user=ch_user,
+        clickhouse_password=ch_pass
+    )
     asyncio.run(worker.start())

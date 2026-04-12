@@ -21,31 +21,34 @@ SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: aiosqlite.Connection = Depends(get_db),
-) -> dict:
-    """Get current authenticated user from JWT token.
-
-    Returns user dict with id, email, is_active.
-    Raises 401 if token invalid.
-    """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+) -> dict | None:
+    """Get current authenticated user (Optional for demo)."""
+    if not credentials:
+        if settings.DEMO_MODE:
+            return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
-            raise credentials_exception
+             if settings.DEMO_MODE:
+                return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+             raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
-        raise credentials_exception
+        if settings.DEMO_MODE:
+            return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     # Fetch user from database
     async with db.execute(
@@ -55,12 +58,9 @@ async def get_current_user(
         row = await cursor.fetchone()
 
     if row is None:
-        raise credentials_exception
+        return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
 
     user = dict(row)
-    if not user["is_active"]:
-        raise HTTPException(status_code=400, detail="Inactive user")
-
     return user
 
 

@@ -9,11 +9,11 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuse
 RUN pip install --no-cache-dir hatch
 
 # Copy package files
-COPY pyproject.toml README.md ./
-COPY src ./src
+COPY packages/collector/pyproject.toml packages/collector/README.md ./
+COPY packages/collector/src ./src
 
 # Copy the API source for shared DB/auth imports
-COPY ../api/src/api /app/api_shared/api
+COPY packages/api/src/api /app/api_shared/api
 ENV PYTHONPATH="/app/api_shared:${PYTHONPATH}"
 
 # Install dependencies

@@ -23,6 +23,7 @@ class BaseConsumer(ABC):
         consumer_name: str,
         batch_size: int = 10,
         poll_interval: float = 0.1,
+        auto_ack: bool = True,
     ):
         self.redis_url = redis_url
         self.stream_key = stream_key
@@ -30,6 +31,7 @@ class BaseConsumer(ABC):
         self.consumer_name = consumer_name
         self.batch_size = batch_size
         self.poll_interval = poll_interval
+        self.auto_ack = auto_ack
         
         self.redis: Optional[Redis] = None
         self.running = False
@@ -71,13 +73,33 @@ class BaseConsumer(ABC):
                 )
 
                 if not streams:
+                    if hasattr(self, "on_idle"):
+                        import inspect
+                        if inspect.iscoroutinefunction(self.on_idle):
+                            await self.on_idle()
+                        else:
+                            self.on_idle()
                     continue
 
                 for _, messages in streams:
                     for message_id, data in messages:
-                        await self.process_message(message_id, data)
-                        # ACK immediately for now (can be moved to subclass if needed for batching)
-                        await self.redis.xack(self.stream_key, self.group_name, message_id)
+                        success = False
+                        try:
+                            await self.process_message(message_id, data)
+                            success = True
+                        except Exception as process_e:
+                            logger.error("Failed to process message %s: %s", message_id, process_e, exc_info=True)
+                            # Dead Letter Queue implementation
+                            try:
+                                dlq_stream = f"{self.stream_key}:dlq"
+                                await self.redis.xadd(dlq_stream, data)
+                                logger.info("Message %s routed to DLQ %s", message_id, dlq_stream)
+                            except Exception as dlq_e:
+                                logger.error("Fatal: Could not write message %s to DLQ: %s", message_id, dlq_e)
+
+                        if self.auto_ack or not success:
+                            # Always ACK to remove it from PEL, since it's either successful or in DLQ
+                            await self.redis.xack(self.stream_key, self.group_name, message_id)
 
             except asyncio.CancelledError:
                 logger.info("Consumer loop cancelled")

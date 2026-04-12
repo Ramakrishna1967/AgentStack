@@ -3,6 +3,10 @@ import json
 import pytest
 import time
 from unittest.mock import AsyncMock, patch
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "packages", "workers", "src")))
+
 from workers.consumer import BaseConsumer
 from workers.security_engine import SecurityEngine
 from workers.cost_calculator import CostCalculator

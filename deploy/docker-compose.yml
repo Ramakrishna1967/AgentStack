@@ -46,19 +46,19 @@ services:
   # --- Backend ---
   api:
     build:
-      context: ..
-      dockerfile: packages/api/Dockerfile
+      context: ../packages/api
+      dockerfile: Dockerfile
     container_name: agentstack-api
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000
     depends_on:
       - redis
       - clickhouse
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///data/agentstack.db
+      - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
       - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
-      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-production}
     volumes:
       - api_data:/data
@@ -79,7 +79,7 @@ services:
       - redis
       - api
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///data/agentstack.db
+      - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
       - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     volumes:
@@ -94,8 +94,8 @@ services:
   # --- Workers ---
   worker-writer:
     build:
-      context: ..
-      dockerfile: packages/workers/Dockerfile
+      context: ../packages/workers
+      dockerfile: Dockerfile
     container_name: agentstack-worker-writer
     command: python -m workers.clickhouse_writer
     depends_on:
@@ -104,6 +104,7 @@ services:
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
     deploy:
       resources:
@@ -112,8 +113,8 @@ services:
 
   worker-security:
     build:
-      context: ..
-      dockerfile: packages/workers/Dockerfile
+      context: ../packages/workers
+      dockerfile: Dockerfile
     container_name: agentstack-worker-security
     command: python -m workers.security_engine
     depends_on:
@@ -122,6 +123,7 @@ services:
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
     deploy:
       resources:
@@ -130,8 +132,8 @@ services:
 
   worker-cost:
     build:
-      context: ..
-      dockerfile: packages/workers/Dockerfile
+      context: ../packages/workers
+      dockerfile: Dockerfile
     container_name: agentstack-worker-cost
     command: python -m workers.cost_calculator
     depends_on:
@@ -140,6 +142,7 @@ services:
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
     deploy:
       resources:
@@ -149,12 +152,9 @@ services:
   # --- Frontend ---
   dashboard:
     build:
-      context: ..
-      dockerfile: packages/dashboard/Dockerfile
+      context: ../packages/dashboard
+      dockerfile: Dockerfile
     container_name: agentstack-dashboard
-    volumes:
-      - ../packages/dashboard:/app
-      - /app/node_modules
     deploy:
       resources:
         limits:

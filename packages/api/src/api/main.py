@@ -54,12 +54,6 @@ def create_app() -> FastAPI:
     # Add rate limiting middleware
     app.middleware("http")(rate_limit_middleware)
 
-    # Health check endpoint
-    @app.get("/health", response_model=HealthResponse, tags=["system"])
-    async def health_check():
-        """Health check endpoint."""
-        return HealthResponse(status="ok", version="0.1.0-alpha")
-
     # Root endpoint
     @app.get("/", tags=["system"])
     async def root():
@@ -72,7 +66,7 @@ def create_app() -> FastAPI:
         }
 
     # Import and include routers
-    from api.routes import traces, spans, projects, security, analytics, auth, ws
+    from api.routes import traces, spans, projects, security, analytics, auth, ws, health
 
     app.include_router(traces.router, prefix="/api/v1", tags=["traces"])
     app.include_router(spans.router, prefix="/api/v1", tags=["spans"])
@@ -80,6 +74,7 @@ def create_app() -> FastAPI:
     app.include_router(security.router, prefix="/api/v1", tags=["security"])
     app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
     app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+    app.include_router(health.router, prefix="/api/v1", tags=["system"])
     app.include_router(ws.router, tags=["websocket"])
 
     return app

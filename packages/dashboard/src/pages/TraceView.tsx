@@ -1,198 +1,216 @@
 // Copyright 2026 AgentStack Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-/**
- * Trace View page — Timeline + Detail panel
- */
-
-import React, { useState } from "react";
-import { useTraces, useTraceDetail } from "../hooks/useTraces";
-import type { TraceFilters } from "../hooks/useTraces";
+import React, { useState, useEffect } from "react";
+import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
-import TraceSearch from "../components/TraceSearch";
-import TraceTimeline from "../components/TraceTimeline";
-import SpanDetail from "../components/SpanDetail";
-import ReplayViewer from "../components/ReplayViewer";
-import type { Span, Trace } from "../lib/types";
-import { formatDuration, formatRelativeTime, getStatusColor } from "../lib/utils";
+import type { Span } from "../lib/types";
 
-const TraceView: React.FC = () => {
-    const { currentProject } = useProject();
-    const [filters, setFilters] = useState<TraceFilters>({
-        project_id: currentProject?.id,
-        page: 1,
-        page_size: 20,
-    });
-    const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
-    const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
-    const [viewMode, setViewMode] = useState<"timeline" | "replay">("timeline");
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface RealTrace {
+  trace_id: string;
+  project_id: string;
+  name: string;
+  status: string;
+  duration_ms: number;
+  span_count: number;
+  start_time: number; // Unix nano
+  end_time: number;
+}
 
-    const { data: tracesData, isLoading: tracesLoading } = useTraces(filters);
-    const { data: traceDetail, isLoading: detailLoading } = useTraceDetail(selectedTraceId);
+// ── Status Icon ────────────────────────────────────────────────────────────────
+const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
+  const isErr = status === "ERROR";
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke={isErr ? "#ef4444" : "#22c55e"} strokeWidth="1.5"/>
+      {isErr ? (
+        <path d="M9 9l6 6M15 9l-6 6" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round"/>
+      ) : (
+        <path d="M8 12l3 3 5-5" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      )}
+    </svg>
+  );
+};
 
-    const handleFilterChange = (newFilters: Partial<TraceFilters>) => {
-        setFilters({ ...filters, ...newFilters, page: 1 });
-    };
+// ── Gantt Bar Chart ─────────────────────────────────────────────────────────
+const GanttChart: React.FC<{ spans: Span[] }> = ({ spans }) => {
+  if (spans.length === 0) return null;
+  const minTime = Math.min(...spans.map(s => s.start_time));
+  const maxTime = Math.max(...spans.map(s => s.end_time));
+  const totalDuration = maxTime - minTime || 1;
 
-    const handleTraceClick = (traceId: string) => {
-        if (selectedTraceId !== traceId) {
-            setSelectedTraceId(traceId);
-            setSelectedSpan(null);
-            setViewMode("timeline"); // reset to timeline on new trace
-        }
-    };
+  // compute depths
+  const depthMap = new Map<string, number>();
+  const calcDepth = (span: Span, d = 0) => {
+    depthMap.set(span.span_id, d);
+    spans.filter(s => s.parent_span_id === span.span_id).forEach(c => calcDepth(c, d + 1));
+  };
+  spans.filter(s => !s.parent_span_id).forEach(s => calcDepth(s));
 
-    const handleSpanClick = (span: Span) => {
-        setSelectedSpan(span);
-    };
-
-    return (
-        <div className="p-8 space-y-6 font-mono">
-            {/* Header */}
-            <div className="flex justify-between items-end bg-black p-6 border-[3px] border-[var(--border-primary)] shadow-[var(--shadow-lg)] relative overflow-hidden">
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-extrabold tracking-widest mb-2 text-[var(--accent-green)] uppercase">
-                        &gt; Traces
-                    </h1>
-                    <p className="text-[var(--text-tertiary)] uppercase tracking-widest">
-                        {currentProject ? (
-                            <span className="flex items-center gap-2">
-                                <span className="w-2 h-2 bg-[var(--accent-green)] animate-[pulse_1s_infinite]"></span>
-                                STATUS: <span className="text-white font-bold">{currentProject.name}</span>_ONLINE
-                            </span>
-                        ) : "ERROR: NO_PROJECT_SELECTED"}
-                    </p>
-                </div>
+  return (
+    <div style={{ width: "100%", overflowX: "auto" }}>
+      {/* Rows */}
+      {spans.map(span => {
+        const depth = depthMap.get(span.span_id) || 0;
+        const left = ((span.start_time - minTime) / totalDuration) * 100;
+        const width = Math.max(((span.end_time - span.start_time) / totalDuration) * 100, 1.5);
+        return (
+          <div key={span.span_id} style={{ display: "flex", alignItems: "center", height: 32, marginBottom: 2 }}>
+            {/* Name */}
+            <div style={{ width: 180, minWidth: 180, paddingLeft: 8 + depth * 16, fontSize: 12, color: "#ccc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {depth > 0 && <span style={{ color: "#444", marginRight: 4 }}>{'└'}</span>}
+              {span.name}
             </div>
-
-            {/* Search Filters */}
-            <TraceSearch onFilter={handleFilterChange} />
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 font-mono">
-                {/* Trace List (Left Column) */}
-                <div className="lg:col-span-1">
-                    <div className="bg-black border-2 border-[var(--border-primary)] shadow-[var(--shadow-lg)] flex flex-col h-[700px]">
-                        <div className="bg-[var(--bg-tertiary)] border-b-2 border-[var(--border-primary)] px-5 py-4 shrink-0 flex justify-between items-center text-xs uppercase tracking-widest font-bold">
-                            <h3 className="text-[var(--text-primary)]">RECENT_TRACES</h3>
-                            <button onClick={() => setFilters({ ...filters })} className="text-[var(--text-secondary)] hover:text-white transition-none" title="Refresh">
-                                [O]
-                            </button>
-                        </div>
-                        <div className="overflow-y-auto flex-1 custom-scrollbar">
-                            {tracesLoading ? (
-                                <div className="p-8 text-center flex flex-col items-center justify-center h-full">
-                                    <div className="text-[var(--accent-green)] animate-pulse uppercase tracking-widest font-bold">&gt; LOADING...</div>
-                                </div>
-                            ) : tracesData?.items.length === 0 ? (
-                                <div className="p-8 text-center text-[var(--text-tertiary)] flex flex-col items-center justify-center h-full uppercase tracking-widest font-bold">
-                                    <span className="text-4xl mb-4 opacity-50 block">📭</span>
-                                    ERR_NO_TRACES
-                                </div>
-                            ) : (
-                                tracesData?.items.map((trace: Trace) => (
-                                    <div
-                                        key={trace.trace_id}
-                                        onClick={() => handleTraceClick(trace.trace_id)}
-                                        className={`px-5 py-4 border-b border-[var(--border-primary)] cursor-pointer transition-none relative group overflow-hidden ${selectedTraceId === trace.trace_id
-                                            ? "bg-[var(--bg-tertiary)] border-l-4 border-l-[var(--accent-green)]"
-                                            : "hover:bg-[var(--bg-hover)] border-l-4 border-l-transparent"
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-between mb-2 relative z-10">
-                                            <span className={`text-sm font-bold tracking-wider ${selectedTraceId === trace.trace_id ? 'text-[var(--accent-green)]' : 'text-[var(--text-primary)]'}`}>
-                                                {trace.trace_id.slice(0, 12)}...
-                                            </span>
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(trace.status).replace('text-', 'bg-').replace(']', ']/20 text-')}`}>
-                                                {trace.status}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-1 relative z-10">
-                                            <span className="flex items-center gap-1">⚡ {trace.span_count} spans</span>
-                                            <span className="font-mono bg-[var(--bg-primary)] px-1.5 py-0.5 rounded border border-[var(--border-secondary)]">
-                                                {trace.duration_ms ? formatDuration(trace.duration_ms) : "N/A"}
-                                            </span>
-                                        </div>
-                                        <div className="text-[11px] text-[var(--text-tertiary)] mt-2 flex items-center gap-1 relative z-10">
-                                            🕒 {formatRelativeTime(trace.start_time)}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
+            {/* Bar area */}
+            <div style={{ flex: 1, position: "relative", height: "100%", display: "flex", alignItems: "center" }}>
+              <div style={{ position: "relative", width: "100%", height: 18, background: "transparent" }}>
+                <div style={{
+                  position: "absolute", left: `${left}%`, width: `${width}%`,
+                  height: "100%", background: span.status === "ERROR" ? "#451a1a" : "#1a1a1a", 
+                  border: `1px solid ${span.status === "ERROR" ? "#7f1d1d" : "#333"}`,
+                  borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, color: "#aaa", whiteSpace: "nowrap", overflow: "hidden", paddingInline: 4,
+                }}>
                 </div>
-
-                {/* Timeline + Detail OR Replay (Right Columns) */}
-                <div className="lg:col-span-3 space-y-6 flex flex-col font-mono">
-                    {selectedTraceId ? (
-                        <div className="bg-black border-2 border-[var(--border-primary)] flex-1 flex flex-col shadow-[var(--shadow-lg)] relative">
-                            {/* View Mode Toggle Tabs */}
-                            <div className="flex gap-4 p-4 border-b-2 border-[var(--border-primary)] bg-[var(--bg-tertiary)] relative z-10">
-                                <button
-                                    className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-none flex items-center gap-2 border-2 ${viewMode === "timeline"
-                                        ? "bg-[var(--accent-green)] text-black border-[var(--accent-green)]"
-                                        : "bg-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)] border-transparent"
-                                        }`}
-                                    onClick={() => setViewMode("timeline")}
-                                >
-                                    <span>[WATERFALL]</span>
-                                </button>
-                                <button
-                                    className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-none flex items-center gap-2 border-2 ${viewMode === "replay"
-                                        ? "bg-[var(--accent-purple)] text-white border-[var(--accent-purple)]"
-                                        : "bg-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-white border-transparent"
-                                        }`}
-                                    onClick={() => setViewMode("replay")}
-                                >
-                                    <span>[TIME_MACHINE]</span>
-                                </button>
-
-                                <div className="ml-auto flex items-center px-4">
-                                    <span className="text-xs font-bold text-[var(--text-tertiary)] tracking-widest uppercase">ID: {selectedTraceId}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 relative z-10 flex flex-col p-4 overflow-hidden">
-                                {viewMode === "timeline" ? (
-                                    <>
-                                        {detailLoading ? (
-                                            <div className="flex-1 flex flex-col items-center justify-center">
-                                                <div className="w-12 h-12 rounded-full border-4 border-[var(--accent-blue)] border-t-transparent animate-spin mb-4"></div>
-                                                <div className="animate-pulse-glow text-lg font-medium">Loading execution timeline...</div>
-                                            </div>
-                                        ) : traceDetail ? (
-                                            <>
-                                                <TraceTimeline
-                                                    spans={traceDetail.spans}
-                                                    onSpanClick={handleSpanClick}
-                                                    selectedSpanId={selectedSpan?.span_id}
-                                                />
-                                                <SpanDetail span={selectedSpan} onClose={() => setSelectedSpan(null)} />
-                                            </>
-                                        ) : (
-                                            <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-secondary)]">
-                                                <span className="text-4xl mb-4">⚠️</span>
-                                                <p>Failed to load trace details.</p>
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <ReplayViewer traceId={selectedTraceId} />
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-black border-2 border-[var(--border-primary)] border-dashed flex-1 flex flex-col items-center justify-center min-h-[600px]">
-                            <h2 className="text-2xl font-bold mb-2 text-[var(--text-tertiary)] uppercase tracking-widest">NO_TRACE_SELECTED</h2>
-                            <p className="text-[var(--text-secondary)] text-center max-w-sm uppercase font-bold text-xs">
-                                ❯ Select a trace from the sidebar to initialize visualization.
-                            </p>
-                        </div>
-                    )}
-                </div>
+              </div>
             </div>
+            {/* Duration label */}
+            <div style={{ width: 100, minWidth: 100, textAlign: "right", fontSize: 11, color: "#555", paddingRight: 4 }}>
+              {span.duration_ms.toFixed(1)}ms
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ── KPI Card ──────────────────────────────────────────────────────────────────
+const KPICard: React.FC<{ label: string; value: string; sub: string }> = ({ label, value, sub }) => (
+  <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: "16px", flex: "1" }}>
+    <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", marginBottom: 2 }}>{label}</div>
+    <div style={{ fontSize: 24, fontWeight: 700, color: "#fff" }}>{value}</div>
+    <div style={{ fontSize: 11, color: "#333" }}>{sub}</div>
+  </div>
+);
+
+// ── Trace Analysis detail ──────────────────────────────────────────────────────
+const TraceDetail: React.FC<{ trace: RealTrace; onBack: () => void }> = ({ trace, onBack }) => {
+  const [spans, setSpans] = useState<Span[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSpans = async () => {
+      try {
+        const res = await apiClient.get(`/traces/${trace.trace_id}`);
+        setSpans(res.data.spans || []);
+      } catch (err) {
+        console.error("Failed to fetch spans:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSpans();
+  }, [trace.trace_id]);
+
+  return (
+    <div style={{ padding: "28px 28px", height: "100%" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+           <button onClick={onBack} style={{ background: "transparent", border: "1px solid #333", color: "#888", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}>←</button>
+           <div style={{ fontSize: 20, fontWeight: 600 }}>Trace Analysis</div>
         </div>
-    );
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 15, color: "#999" }}>ID: <span style={{ color: "#fff", fontFamily: "monospace" }}>{trace.trace_id}</span></div>
+        <div style={{ fontSize: 12, color: "#555" }}>{new Date(trace.start_time / 1e6).toLocaleString()}</div>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+          <KPICard label="Duration" value={`${(trace.duration_ms / 1000).toFixed(2)}s`} sub="end-to-end" />
+          <KPICard label="Spans" value={trace.span_count.toString()} sub="total count" />
+          <KPICard label="Status" value={trace.status} sub="final state" />
+      </div>
+
+      <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: "16px" }}>
+        {loading ? <div style={{ padding: 20, color: "#444" }}>Loading spans...</div> : <GanttChart spans={spans} />}
+      </div>
+    </div>
+  );
+};
+
+// ── Traces List ───────────────────────────────────────────────────────────────
+const TraceView: React.FC = () => {
+  const { currentProject } = useProject();
+  const [traces, setTraces] = useState<RealTrace[]>([]);
+  const [selectedTrace, setSelectedTrace] = useState<RealTrace | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!currentProject) return;
+    const fetchTraces = async () => {
+      try {
+        const res = await apiClient.get("/traces", { params: { project_id: currentProject.id } });
+        setTraces(res.data.items || []);
+      } catch (err) {
+        console.error("Failed to fetch traces:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTraces();
+  }, [currentProject]);
+
+  if (selectedTrace) return <TraceDetail trace={selectedTrace} onBack={() => setSelectedTrace(null)} />;
+
+  return (
+    <div style={{ padding: "28px 28px", minHeight: "100%" }}>
+      <div style={{ marginBottom: 20, fontSize: 13, color: "#555" }}>
+        {currentProject ? `Project: ${currentProject.name}` : "Select a project to view traces"}
+      </div>
+
+      <div style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 8, overflow: "hidden" }}>
+        {/* Head */}
+        <div style={{ display: "grid", gridTemplateColumns: "44px 130px 1fr 100px 80px 1fr 30px", padding: "10px 16px", borderBottom: "1px solid #1a1a1a", background: "#0d0d0d" }}>
+          {["STATUS", "TRACE ID", "NAME", "DURATION", "SPANS", "TIMESTAMP", ""].map(col => (
+            <div key={col} style={{ fontSize: 11, color: "#444", fontWeight: 500, letterSpacing: "0.06em" }}>{col}</div>
+          ))}
+        </div>
+
+        {/* Rows */}
+        {loading ? (
+             <div style={{ padding: 40, textAlign: "center", color: "#444" }}>Loading...</div>
+        ) : traces.length === 0 ? (
+             <div style={{ padding: 40, textAlign: "center", color: "#444" }}>No data found.</div>
+        ) : traces.map((trace, i) => (
+          <div
+            key={trace.trace_id}
+            onClick={() => setSelectedTrace(trace)}
+            style={{
+              display: "grid", gridTemplateColumns: "44px 130px 1fr 100px 80px 1fr 30px",
+              padding: "13px 16px",
+              borderBottom: i < traces.length - 1 ? "1px solid #111" : "none",
+              cursor: "pointer", alignItems: "center",
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0d0d0d"}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}><StatusIcon status={trace.status} /></div>
+            <div style={{ fontSize: 13, fontFamily: "monospace", color: "#ccc" }}>{trace.trace_id.slice(0, 8)}</div>
+            <div style={{ fontSize: 13, color: "#ccc" }}>{trace.name || "Agent Run"}</div>
+            <div style={{ fontSize: 13, color: "#aaa" }}>{(trace.duration_ms / 1000).toFixed(2)}s</div>
+            <div style={{ fontSize: 13, color: "#aaa" }}>{trace.span_count}</div>
+            <div style={{ fontSize: 12, color: "#555" }}>{new Date(trace.start_time / 1e6).toLocaleString()}</div>
+            <div style={{ color: "#444", textAlign: "right" }}>›</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default TraceView;

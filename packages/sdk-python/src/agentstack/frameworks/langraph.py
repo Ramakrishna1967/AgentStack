@@ -48,10 +48,24 @@ def instrument() -> None:
         def instrumented_compile(self, *args: Any, **kwargs: Any) -> Any:
             """Wrapped compile that instruments all nodes before compilation."""
             # Instrument each node in the graph
-            for node_name, node_func in list(self.nodes.items()):
-                if not hasattr(node_func, "_agentstack_instrumented"):
-                    instrumented_node = _instrument_node(node_name, node_func)
-                    self.nodes[node_name] = instrumented_node
+            for node_name, node_spec in self.nodes.items():
+                # LangGraph 1.x uses NodeSpec objects
+                if hasattr(node_spec, "runnable") and hasattr(node_spec, "ends"):
+                    runnable = node_spec.runnable
+                    
+                    # Sync
+                    if hasattr(runnable, "func") and runnable.func:
+                        if not hasattr(runnable.func, "_agentstack_instrumented"):
+                            runnable.func = _instrument_node(node_name, runnable.func)
+                    
+                    # Async
+                    if hasattr(runnable, "afunc") and runnable.afunc:
+                        if not hasattr(runnable.afunc, "_agentstack_instrumented"):
+                            runnable.afunc = _instrument_node(node_name, runnable.afunc)
+                
+                # Fallback for older versions where nodes were direct functions
+                elif not hasattr(node_spec, "_agentstack_instrumented") and callable(node_spec):
+                    self.nodes[node_name] = _instrument_node(node_name, node_spec)
 
             # Call the original compile
             return original_compile(self, *args, **kwargs)

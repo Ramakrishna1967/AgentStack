@@ -207,7 +207,7 @@ class Span:
             service_name=self.service_name,
             attributes=self.attributes,
             events=self.events,
-            project_id="",
+            project_id=config.project_id,
             api_key_hash="",
         )
 
@@ -221,6 +221,37 @@ class Span:
             f"Span(name={self.name!r}, trace_id={self.trace_id[:8]}..., "
             f"span_id={self.span_id[:8]}..., status={self.status.value})"
         )
+
+
+class NoOpSpan:
+    """A lightweight stub when the SDK is disabled."""
+    
+    __slots__ = ("trace_id", "span_id", "parent_span_id", "name", "_ended")
+
+    def __init__(self, name: str, parent_span_id: str | None = None) -> None:
+        self.trace_id = get_current_trace_id() or "0" * 32
+        self.span_id = "0" * 16
+        self.parent_span_id = parent_span_id
+        self.name = name
+        self._ended = False
+
+    def set_attribute(self, key: str, value: Any) -> None: pass
+    def set_status(self, status: SpanStatus, message: str | None = None) -> None: pass
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None: pass
+    def record_exception(self, exc: BaseException) -> None: pass
+    
+    def end(self) -> None:
+        self._ended = True
+        
+    def to_model(self) -> SpanModel:
+        raise NotImplementedError("NoOpSpan cannot be serialized")
+
+    @property
+    def is_ended(self) -> bool:
+        return self._ended
+
+    def __repr__(self) -> str:
+        return f"NoOpSpan(name={self.name!r})"
 
 
 class Tracer:
@@ -268,9 +299,7 @@ class Tracer:
             A new Span instance (not yet ended). Call span.end() when done.
         """
         if not self._config.enabled:
-            # Return a no-op span when SDK is disabled — it still functions
-            # as a normal Span but won't be exported
-            pass
+            return NoOpSpan(name=name, parent_span_id=parent_span_id)
 
         return Span(
             name=name,

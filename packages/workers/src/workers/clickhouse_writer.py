@@ -23,6 +23,8 @@ class ClickHouseWriter(BaseConsumer):
         redis_url: str,
         clickhouse_host: str = "localhost",
         clickhouse_port: int = 8123,
+        clickhouse_user: str = "default",
+        clickhouse_password: str = "",
         batch_size: int = 1000,
         flush_interval: float = 1.0,
     ):
@@ -35,18 +37,37 @@ class ClickHouseWriter(BaseConsumer):
         )
         self.clickhouse_host = clickhouse_host
         self.clickhouse_port = clickhouse_port
+        self.clickhouse_user = clickhouse_user
+        self.clickhouse_password = clickhouse_password
         self.flush_interval = flush_interval
         self.buffer: List[tuple] = []  # List of (message_id, data_dict)
         self.last_flush = time.time()
         self.ch_client: ClickHouseClient | None = None
+        
+        # Ensure logs are not buffered
+        import sys
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, line_buffering=True)
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, line_buffering=True)
 
     async def start(self):
         """Override start to initialize ClickHouse client and use custom loop without auto-ACK."""
-        self.ch_client = get_client(host=self.clickhouse_host, port=self.clickhouse_port)
-        logger.info(f"Connected to ClickHouse at {self.clickhouse_host}:{self.clickhouse_port}")
+        logger.info(f"Connecting to ClickHouse at {self.clickhouse_host}:{self.clickhouse_port}...")
+        try:
+            self.ch_client = get_client(
+                host=self.clickhouse_host, 
+                port=self.clickhouse_port,
+                username=self.clickhouse_user,
+                password=self.clickhouse_password
+            )
+            logger.info("Successfully connected to ClickHouse")
+        except Exception as e:
+            logger.error(f"Failed to connect to ClickHouse: {e}")
+            raise
 
-        # Connect to Redis directly (bypass BaseConsumer.start() to avoid auto-ACK)
+        # Connect to Redis directly
         from redis.asyncio import Redis
+        logger.info(f"Connecting to Redis at {self.redis_url}...")
         self.redis = Redis.from_url(self.redis_url, decode_responses=False)
         self.running = True
 
@@ -59,35 +80,35 @@ class ClickHouseWriter(BaseConsumer):
             if "BUSYGROUP" not in str(e):
                 logger.error(f"Error creating group: {e}")
 
-        logger.info(f"Starting ClickHouseWriter consumer on {self.stream_key}")
+        logger.info(f"--- CLICKHOUSE WRITER STARTING CONSUMPTION ---")
+        logger.info(f"Stream: {self.stream_key}, Group: {self.group_name}")
 
         while self.running:
             try:
+                # Read from Redis (blocking)
                 streams = await self.redis.xreadgroup(
                     groupname=self.group_name,
                     consumername=self.consumer_name,
                     streams={self.stream_key: ">"},
                     count=self.batch_size,
-                    block=int(self.poll_interval * 1000),
+                    block=1000, # 1s wait
                 )
 
-                if not streams:
-                    # Check if flush interval elapsed even with no new messages
-                    if (time.time() - self.last_flush) >= self.flush_interval:
-                        await self.flush_buffer()
-                    continue
-
-                for _, messages in streams:
-                    for message_id, data in messages:
-                        # Buffer message — ACK happens in flush_buffer() in bulk
-                        await self.process_message(message_id, data)
+                if streams:
+                    for _, messages in streams:
+                        for message_id, data in messages:
+                            await self.process_message(message_id, data)
+                
+                # Always check flush interval
+                if (time.time() - self.last_flush) >= self.flush_interval:
+                    await self.flush_buffer()
 
             except asyncio.CancelledError:
                 logger.info("ClickHouseWriter loop cancelled")
                 break
             except Exception as e:
-                logger.error(f"Error in ClickHouseWriter loop: {e}")
-                await asyncio.sleep(1.0)
+                logger.error(f"Error in ClickHouseWriter loop: {e}", exc_info=True)
+                await asyncio.sleep(2.0) # Back off on error
 
         # Final flush on shutdown
         await self.flush_buffer()
@@ -130,7 +151,7 @@ class ClickHouseWriter(BaseConsumer):
             spans_to_insert.append([
                 span.get("span_id"),
                 span.get("trace_id"),
-                span.get("parent_span_id", ""),
+                span.get("parent_span_id") or "",
                 span.get("project_id"),
                 span.get("name"),
                 span.get("service_name", "unknown"),
@@ -190,6 +211,13 @@ if __name__ == "__main__":
     import os
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     ch_host = os.getenv("CLICKHOUSE_HOST", "localhost")
+    ch_user = os.getenv("CLICKHOUSE_USER", "default")
+    ch_pass = os.getenv("CLICKHOUSE_PASSWORD", "")
     
-    worker = ClickHouseWriter(redis_url=redis_url, clickhouse_host=ch_host)
+    worker = ClickHouseWriter(
+        redis_url=redis_url, 
+        clickhouse_host=ch_host,
+        clickhouse_user=ch_user,
+        clickhouse_password=ch_pass
+    )
     asyncio.run(worker.start())

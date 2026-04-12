@@ -17,15 +17,7 @@ from fastapi import FastAPI, Request, Depends, Header, HTTPException, Background
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-# Try to import from the API package.
-# In monorepo dev, the api package may be installed or on sys.path.
-# In Docker, each service has its own image, so this import may not be available.
-try:
-    from api.db import get_database, get_db
-except ImportError:
-    # Standalone mode: fall back to path manipulation
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "api" / "src"))
-    from api.db import get_database, get_db
+from collector.db import get_db
 from collector.auth import verify_api_key
 from collector.health import router as health_router
 from collector.redis_writer import redis_writer
@@ -46,10 +38,9 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown."""
     logger.info("Collector starting...")
 
-    # Initialize DB (still needed for Auth)
-    db = get_database()
-    await db.init_db()
-    logger.info("Database initialized")
+    # Wait for API to initialize DB if needed
+    # The collector assumes the API service handles migrations.
+    logger.info("Database connection configured")
 
     # Initialize Redis Writer
     await redis_writer.connect()
@@ -104,6 +95,15 @@ async def ingest_traces(
     if len(body_bytes) > MAX_PAYLOAD_BYTES:
         raise HTTPException(status_code=413, detail="Payload too large (max 5MB)")
 
+    # Handle compression
+    content_encoding = request.headers.get("Content-Encoding", "").lower()
+    if content_encoding == "gzip":
+        try:
+            import gzip
+            body_bytes = gzip.decompress(body_bytes)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid gzip payload")
+
     # Verify API key and get project_id
     project_id = await verify_api_key(x_api_key=x_api_key, db=db)
 
@@ -128,7 +128,21 @@ async def ingest_traces(
             continue
 
         # Enrich with project_id
-        span_data["project_id"] = project_id
+        # --- AUTO-DISCOVERY: If trace has a custom project_id, try to use it ---
+        trace_project_id = span_data.get("project_id") or project_id
+        span_data["project_id"] = trace_project_id
+
+        # Async: Ensure project exists in SQLite so it shows in Dashboard
+        try:
+            # Check if this project is already known to the cache or DB
+            # We'll do a simple 'INSERT OR IGNORE' to keep it fast
+            await db.execute(
+                "INSERT OR IGNORE INTO projects (id, name, api_key_hash) VALUES (?, ?, ?)",
+                (trace_project_id, trace_project_id.replace('-', ' ').title(), x_api_key)
+            )
+            await db.commit()
+        except Exception as e:
+            logger.debug("Optional project auto-create failed: %s", e)
 
         # Async write to Redis
         await redis_writer.add_span(span_data)

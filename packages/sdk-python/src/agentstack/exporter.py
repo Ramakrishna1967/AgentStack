@@ -118,10 +118,7 @@ class BatchSpanProcessor:
 
         Blocks until the current buffer contents have been exported.
         """
-        self._flush_event.set()
-        # Give the background thread a moment to process
-        if self._thread and self._thread.is_alive():
-            time.sleep(0.1)
+        self._do_flush()
 
     def _export_loop(self) -> None:
         """Background loop that periodically exports buffered spans."""

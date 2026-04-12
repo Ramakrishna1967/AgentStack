@@ -62,6 +62,7 @@ class AgentStackConfig:
     log_level: str = "INFO"
     debug: bool = False
     service_name: str = "default"
+    project_id: str = "default"
 
     @classmethod
     def from_env(cls) -> AgentStackConfig:
@@ -77,6 +78,7 @@ class AgentStackConfig:
             AGENTSTACK_LOG_LEVEL: Default "INFO". Python logging level.
             AGENTSTACK_DEBUG: Default "false". Enable verbose SDK logging.
             AGENTSTACK_SERVICE_NAME: Default "default". Service name for spans.
+            AGENTSTACK_PROJECT_ID: Default "default". Project ID for the dashboard.
         """
         return cls(
             api_key=_env("AGENTSTACK_API_KEY", ""),
@@ -88,6 +90,7 @@ class AgentStackConfig:
             log_level=_env("AGENTSTACK_LOG_LEVEL", "INFO"),
             debug=_env_bool("AGENTSTACK_DEBUG", False),
             service_name=_env("AGENTSTACK_SERVICE_NAME", "default"),
+            project_id=_env("AGENTSTACK_PROJECT_ID", "default"),
         )
 
 

@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     # Environment
     ENVIRONMENT: str = "development"
+    DEMO_MODE: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

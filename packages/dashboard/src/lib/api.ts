@@ -7,7 +7,9 @@
 
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Use the environment variable if provided (for dev), otherwise default to local origin
+// In production Docker, window.location.origin will be the gateway.
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export const apiClient = axios.create({
     baseURL: `${API_BASE_URL}/api/v1`,

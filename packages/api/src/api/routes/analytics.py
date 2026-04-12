@@ -21,7 +21,6 @@ async def get_cost_timeseries(
     start_date: int | None = Query(None, description="Unix timestamp in seconds"),
     end_date: int | None = Query(None, description="Unix timestamp in seconds"),
     ch: ClickHouseClient = Depends(get_clickhouse),
-    current_user: dict = Depends(get_current_active_user),
 ):
     """Get cost metrics over time from ClickHouse.
 

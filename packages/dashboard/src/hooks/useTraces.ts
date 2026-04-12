@@ -74,11 +74,18 @@ export const useDashboardMetrics = (projectId?: string) => {
                 traces.reduce((sum, t) => sum + (t.duration_ms || 0), 0) / (totalTraces || 1);
             const totalCost = totalTraces * 0.001; // Placeholder cost estimation
 
+            const latencyData = traces.slice(0, 50).reverse().map((t) => ({
+                name: `Trace ${t.trace_id.substring(0, 4)}`,
+                latency: t.duration_ms || 0,
+                category: t.status === "ERROR" ? "error" : "trace"
+            }));
+
             return {
                 totalTraces,
                 errorRate: errorRate.toFixed(1),
                 avgLatency: Math.round(avgLatency),
                 totalCost: totalCost.toFixed(2),
+                latencyData: latencyData
             };
         },
     });
