@@ -38,7 +38,7 @@ _trace_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "agentstack_trace_id", default=None
 )
 
-_span_stack_var: contextvars.ContextVar[list[Span]] = contextvars.ContextVar(
+_span_stack_var: contextvars.ContextVar[list["Span"]] = contextvars.ContextVar(
     "agentstack_span_stack"
 )
 

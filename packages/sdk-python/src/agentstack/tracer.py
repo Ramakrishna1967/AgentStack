@@ -173,16 +173,13 @@ class Span:
         if self._end_mono_ns < self._start_mono_ns:
             self._end_mono_ns = self._start_mono_ns
 
-        # Sanitize PII before export (import here to avoid circular import)
+        # Sanitize PII before export
         try:
             from agentstack.sanitizer import scrub_pii
-
             self.attributes = scrub_pii(self.attributes)
-        except ImportError:
-            # sanitizer not yet available (during Step 1 before Step 3)
+        except (ImportError, Exception):
+            # Fallback for early build steps or unexpected errors
             pass
-        except Exception:
-            logger.debug("PII sanitization failed, exporting raw attributes", exc_info=True)
 
         # Queue for export (import here to avoid circular import)
         try:

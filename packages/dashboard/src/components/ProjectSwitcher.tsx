@@ -58,7 +58,7 @@ export const ProjectSwitcher: React.FC = () => {
             }
         };
         fetchProjects();
-    }, []);
+    }, [currentProject, setCurrentProject]);
 
     return (
         <div className="project-switcher" style={{ marginBottom: "16px" }}>
