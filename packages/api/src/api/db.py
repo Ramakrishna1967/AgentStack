@@ -38,14 +38,38 @@ _DEFAULT_DB_PATH = _get_default_db_path()
 
 
 class Database:
-    """Async SQLite database manager."""
+    """Async SQLite database manager with schema migration support."""
+
+    _LATEST_VERSION = 1
+
+    # Migration definitions: version -> (name, SQL statements)
+    _MIGRATIONS = {
+        1: ("initial_schema", [
+            # All CREATE TABLE IF NOT EXISTS statements are idempotent,
+            # so running them as a migration is safe for both fresh and existing DBs
+        ]),
+    }
 
     def __init__(self, db_path: str | Path = _DEFAULT_DB_PATH):
         self.db_path = str(db_path)
         self._initialized = False
 
+    async def _apply_migrations(self, conn: aiosqlite.Connection, from_version: int) -> None:
+        """Apply pending schema migrations sequentially."""
+        for version in range(from_version + 1, self._LATEST_VERSION + 1):
+            if version in self._MIGRATIONS:
+                name, statements = self._MIGRATIONS[version]
+                for stmt in statements:
+                    await conn.execute(stmt)
+                await conn.execute(
+                    "INSERT INTO _schema_version (version, name) VALUES (?, ?)",
+                    (version, name),
+                )
+                await conn.commit()
+                logger.info(f"Applied schema migration v{version}: {name}")
+
     async def init_db(self) -> None:
-        """Initialize database schema on first run."""
+        """Initialize database schema on first run with version tracking."""
         if self._initialized:
             return
 
@@ -55,6 +79,28 @@ class Database:
             await conn.execute("PRAGMA synchronous=NORMAL")
             await conn.execute("PRAGMA busy_timeout=5000")
             await conn.execute("PRAGMA foreign_keys=ON")
+
+            # Schema version tracking
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS _schema_version (
+                    version INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Check current schema version
+            cursor = await conn.execute("SELECT MAX(version) FROM _schema_version")
+            row = await cursor.fetchone()
+            current_version = row[0] if row[0] is not None else 0
+            
+            if current_version == 0:
+                # Fresh install — apply all migrations
+                await self._apply_migrations(conn, from_version=0)
+            elif current_version < self._LATEST_VERSION:
+                # Existing DB — apply pending migrations
+                logger.info(f"Upgrading schema from v{current_version} to v{self._LATEST_VERSION}")
+                await self._apply_migrations(conn, from_version=current_version)
 
             # Projects table
             await conn.execute("""

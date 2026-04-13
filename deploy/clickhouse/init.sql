@@ -1,4 +1,18 @@
 -- AgentStack ClickHouse Schema
+-- Schema Version: 2
+-- Migration tracking via _schema_migrations table
+
+-- Schema Migrations Table
+-- Tracks which migrations have been applied
+CREATE TABLE IF NOT EXISTS _schema_migrations (
+    version UInt32,
+    name String,
+    applied_at DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree()
+ORDER BY version;
+
+-- Record initial schema version
+INSERT INTO _schema_migrations (version, name) VALUES (1, 'initial_schema');
 
 -- Spans Table (Core Telemetry)
 -- Optimized for querying by project, trace, and time.

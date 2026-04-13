@@ -65,8 +65,8 @@ def auto_instrument() -> dict[str, bool]:
     
     if detected.get("langgraph"):
         try:
-            from agentstack.frameworks import langraph
-            langraph.instrument()
+            from agentstack.frameworks import langgraph
+            langgraph.instrument()
             results["langgraph"] = True
             logger.debug("LangGraph auto-instrumentation applied")
         except Exception:

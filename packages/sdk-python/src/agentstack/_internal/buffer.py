@@ -42,12 +42,22 @@ class RingBuffer(Generic[T]):
         """Add an item to the buffer.
 
         If the buffer is full, the oldest item is silently dropped and
-        the drop counter is incremented.
+        the drop counter is incremented. Metrics are updated if available.
         """
         with self._lock:
-            if len(self._buffer) >= self._capacity:
+            overflow = len(self._buffer) >= self._capacity
+            if overflow:
                 self._dropped += 1
             self._buffer.append(item)
+            
+        # Update metrics outside lock to avoid deadlock
+        if overflow:
+            try:
+                from agentstack.metrics import get_metrics
+                metrics = get_metrics()
+                metrics.record_buffer_state(len(self._buffer), self._capacity, overflow=True)
+            except ImportError:
+                pass
 
     def drain(self) -> list[T]:
         """Remove and return ALL items from the buffer.

@@ -1,6 +1,8 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import json
@@ -150,7 +152,8 @@ class SecurityEngine(BaseConsumer):
             alert_id = str(uuid.uuid4())
             
             # ClickHouse row structure matching init.sql:
-            # id, project_id, trace_id, span_id, rule_name, severity, score, description, evidence, created_at
+            # id, project_id, trace_id, span_id, rule_name, severity, score, description, evidence
+            # created_at uses DEFAULT now() so it is omitted from insert
             rows.append([
                 alert_id,
                 project_id,
@@ -161,11 +164,6 @@ class SecurityEngine(BaseConsumer):
                 float(alert["score"]),
                 alert["description"],
                 alert["evidence"],
-                # ClickHouse usually handles default now(), but we can pass it if column expects DateTime
-                # If column has DEFAULT now(), we might optimize by not passing it in python client insert?
-                # clickhouse-connect insert usually matches columns by position or name.
-                # Let's rely on explicit names and omit created_at if possible, or pass it.
-                # Base on _insert_sync below, we map columns explicitly.
             ])
             
             # Real-time notification via Redis

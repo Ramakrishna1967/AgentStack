@@ -1,6 +1,8 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
@@ -57,13 +59,17 @@ class CostCalculator(BaseConsumer):
         self.last_flush = time.time()
 
     async def start(self):
-        self.ch_client = get_client(
-            host=self.clickhouse_host, 
-            port=self.clickhouse_port,
-            username=self.clickhouse_user,
-            password=self.clickhouse_password
-        )
-        logger.info(f"Connected to ClickHouse at {self.clickhouse_host}:{self.clickhouse_port}")
+        try:
+            self.ch_client = get_client(
+                host=self.clickhouse_host, 
+                port=self.clickhouse_port,
+                username=self.clickhouse_user,
+                password=self.clickhouse_password
+            )
+            logger.info(f"Connected to ClickHouse at {self.clickhouse_host}:{self.clickhouse_port}")
+        except Exception as e:
+            logger.error(f"Failed to connect to ClickHouse: {e}")
+            raise RuntimeError("Fatal: ClickHouse connection required for CostCalculator")
         await super().start()
 
     async def process_message(self, message_id: bytes, data: Dict[bytes, bytes]):
@@ -157,13 +163,10 @@ class CostCalculator(BaseConsumer):
             ])
             
         try:
-            # Sync Insert
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, self._insert_sync, rows)
             
-            # Not ACKing here because cost calculation is optional/secondary?
-            # Or we should ACK. The prompt logic implies independent consumer groups.
-            # So yes, we ACK our 'cost-group' progress.
+            # ACK processed messages for this consumer group
             pipeline = self.redis.pipeline()
             for msg_id in message_ids:
                 pipeline.xack(self.stream_key, self.group_name, msg_id)

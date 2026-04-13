@@ -77,16 +77,9 @@ async def verify_api_key(
 
             return project_id
 
-    # --- AUTO-DISCOVERY: If key is the demo key, allow dynamic project IDs ---
-    # In a real prod environment, we would only allow this for specific tiers.
-    # For this platform, we'll allow it if the key is the standard demo key.
-    if x_api_key == "ak_agentstack_demo_key_2026":
-        # We need to know which project the user WANTED. 
-        # Since the SDK sends it in the payload, we'll return a special 'DYNAMIC' flag
-        # and handle the creation in server.py after parsing the payload.
-        # OR, we can just return 'demo-simulation' as the default and let the trace enrichment handle it.
-        # Actually, let's just return 'demo-simulation' but allow server.py to override.
-        return "demo-simulation"
+    # SECURITY: Demo key bypass removed. All keys must be properly registered.
+    # To create a demo project, use the API server's project creation endpoint.
+    # Hardcoded keys are a security risk and have been removed.
 
     raise HTTPException(
         status_code=401,

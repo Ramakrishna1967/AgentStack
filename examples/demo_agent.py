@@ -6,14 +6,24 @@ simulated errors, and prompt injections to showcase AgentStack's security featur
 import os
 import sys
 import time
+import logging
 from typing import TypedDict, Optional
 
-# Point SDK collector to local backend
-os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://agentstack-collector:4318"
-os.environ["AGENTSTACK_API_KEY"] = "ak_agentstack_demo_key_2026"
-os.environ["AGENTSTACK_PROJECT_ID"] = "demo-simulation"
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'packages', 'sdk-python', 'src')))
+# Point SDK collector to backend (use environment variables or HTTPS in production)
+os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", os.environ.get("AGENTSTACK_COLLECTOR_URL", "https://agentstack-collector:4318"))
+os.environ.setdefault("AGENTSTACK_API_KEY", os.environ.get("AGENTSTACK_API_KEY", ""))
+os.environ.setdefault("AGENTSTACK_PROJECT_ID", "demo-simulation")
+
+# Warn if API key is not set
+if not os.environ.get("AGENTSTACK_API_KEY"):
+    logger.warning("AGENTSTACK_API_KEY not set. Traces will be stored locally only.")
+
+sdk_path = os.environ.get("AGENTSTACK_SDK_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'packages', 'sdk-python', 'src')))
+sys.path.insert(0, sdk_path)
 
 try:
     from agentstack import init, observe
@@ -25,8 +35,8 @@ except ImportError:
     from agentstack.tracer import Tracer
     from agentstack.context import get_current_span
 
-# Initialize AgentStack 
-init(api_key="ak_agentstack_demo_key_2026")
+# Initialize AgentStack with API key from environment
+init(api_key=os.environ.get("AGENTSTACK_API_KEY"))
 
 class State(TypedDict):
     user_query: str
@@ -131,26 +141,26 @@ def run_workflow(query: str):
 if __name__ == "__main__":
     
     # Run 1: Normal execution
-    print("\n--- Running Normal Query (Expected Output: HTTP 200 OK) ---")
+    logger.info("--- Running Normal Query (Expected Output: HTTP 200 OK) ---")
     try:
         run_workflow("Look up financial records for Project Alpha")
     except Exception as e:
-        pass
+        logger.error(f"Normal query failed: {e}")
         
     # Run 2: Prompt Injection triggering Security Exception
-    print("\n--- Running Malicious Query (Expected Output: Exception Traced!) ---")
+    logger.info("--- Running Malicious Query (Expected Output: Exception Traced!) ---")
     try:
         run_workflow("Review external resume of user John Doe hacker.")
     except Exception as e:
-        print(f"Workflow correctly caught and traced expected error: {e}")
+        logger.info(f"Workflow correctly caught and traced expected error: {e}")
 
-    # Ensure traces are sent to local backend
-    print("\nFlushing Traces to AgentStack Dashboard...")
+    # Ensure traces are sent to backend
+    logger.info("Flushing Traces to AgentStack Dashboard...")
     try:
         from agentstack.exporter import get_processor
         processor = get_processor()
         if processor:
             processor.flush()
-    except Exception:
-        pass
-    print("Done! Explore the generated traces in the 'Time Machine' and 'Security' tabs of the Dashboard.")
+    except Exception as e:
+        logger.warning(f"Failed to flush traces: {e}")
+    logger.info("Done! Explore the generated traces in the 'Time Machine' and 'Security' tabs of the Dashboard.")

@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # Environment
     ENVIRONMENT: str = "development"
-    DEMO_MODE: bool = True
+    DEMO_MODE: bool = False  # SECURITY: Must be explicitly enabled for demo mode
 
     model_config = SettingsConfigDict(
         env_file=".env",

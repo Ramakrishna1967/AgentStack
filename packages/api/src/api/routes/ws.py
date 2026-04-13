@@ -109,13 +109,50 @@ async def broadcast(message: dict) -> None:
 
 
 @router.websocket("/ws/traces")
-async def ws_trace_feed(websocket: WebSocket):
-    """WebSocket endpoint.
+async def ws_trace_feed(websocket: WebSocket, token: str | None = None):
+    """WebSocket endpoint with JWT authentication.
     
     Streams:
     1. Traces (future implementation via Redis PubSub or similar)
     2. Alerts (via Redis Stream consumer)
+    
+    Args:
+        token: JWT token can be passed as query parameter ?token=xxx
     """
+    # Validate JWT token before accepting connection
+    from api.dependencies import get_current_user
+    from jose import jwt, JWTError
+    from api.config import settings
+    
+    try:
+        # Try to get token from query param or subprotocol
+        if not token:
+            token = websocket.query_params.get("token")
+        
+        if not token and not settings.DEMO_MODE:
+            await websocket.close(code=1008, reason="Authentication required")
+            return
+        
+        if token:
+            try:
+                payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
+                user_id = payload.get("sub")
+                if not user_id and not settings.DEMO_MODE:
+                    await websocket.close(code=1008, reason="Invalid token")
+                    return
+            except JWTError:
+                if not settings.DEMO_MODE:
+                    await websocket.close(code=1008, reason="Invalid token")
+                    return
+        elif not settings.DEMO_MODE:
+            await websocket.close(code=1008, reason="Authentication required")
+            return
+            
+    except Exception:
+        if not settings.DEMO_MODE:
+            await websocket.close(code=1011, reason="Internal error")
+            return
+    
     await websocket.accept()
     _connections.add(websocket)
     logger.info("WebSocket client connected. Total: %d", len(_connections))
@@ -150,5 +187,7 @@ async def ws_trace_feed(websocket: WebSocket):
         logger.error("WebSocket error: %s", type(e).__name__)
     finally:
         _connections.discard(websocket)
+        if websocket in _connections:
+            _connections.remove(websocket)
         logger.info("WebSocket client disconnected. Total: %d", len(_connections))
 

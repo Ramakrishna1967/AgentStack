@@ -6,22 +6,24 @@ and Google's Gemini API, fully instrumented with the AgentStack SDK.
 import os
 import sys
 import time
-import asyncio
-from typing import TypedDict, Annotated, List, Optional
-from operator import add
+import logging
+from typing import TypedDict, Optional
 
 # ── API CONFIGURATION ──────────────────────────────────────────────────────────
-# Using provided Gemini API Key
-GOOGLE_API_KEY = "AIzaSyBN8SwvienD35OeAwm1LbjC6msWeNRLWj0"
+# Get API keys from environment variables (NEVER hardcode in production)
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise ValueError("GOOGLE_API_KEY environment variable is required")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # AgentStack Configuration
-os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://agentstack-collector:4318"
-os.environ["AGENTSTACK_API_KEY"] = "ak_agentstack_demo_key_2026"
-os.environ["AGENTSTACK_PROJECT_ID"] = "real-world-test"
+os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", "https://agentstack-collector:4318")
+os.environ.setdefault("AGENTSTACK_API_KEY", os.environ.get("AGENTSTACK_API_KEY", ""))
+os.environ.setdefault("AGENTSTACK_PROJECT_ID", "real-world-test")
 
-# Ensure SDK is in path
-sys.path.insert(0, "/app/packages/sdk-python/src")
+# Ensure SDK is in path (for development only)
+sdk_path = os.environ.get("AGENTSTACK_SDK_PATH", "/app/packages/sdk-python/src")
+sys.path.insert(0, sdk_path)
 
 try:
     import agentstack
@@ -56,9 +58,13 @@ class AgentState(TypedDict):
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0)
 
 # ── NODES ──────────────────────────────────────────────────────────────────────
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
+
 def planner_node(state: AgentState):
     """Analyze the query and create a research plan."""
-    print("[INFO] Node [Planner]: Analyzing query...")
+    logger.info("Node [Planner]: Analyzing query...")
     query = state["query"]
     
     # Actually call Gemini
@@ -67,12 +73,12 @@ def planner_node(state: AgentState):
         response = llm.invoke(prompt)
         return {"plan": response.content}
     except Exception as e:
-        print(f"[ERROR] Planner LLM Error: {e}")
+        logger.error(f"Planner LLM Error: {e}")
         raise
 
 def researcher_node(state: AgentState):
     """Execute the plan and synthesize findings."""
-    print("[INFO] Node [Researcher]: Executing plan...")
+    logger.info("Node [Researcher]: Executing plan...")
     plan = state["plan"]
     
     # Actually call Gemini
@@ -81,17 +87,17 @@ def researcher_node(state: AgentState):
         response = llm.invoke(prompt)
         return {"report": response.content}
     except Exception as e:
-        print(f"[ERROR] Researcher LLM Error: {e}")
+        logger.error(f"Researcher LLM Error: {e}")
         raise
 
 def validator_node(state: AgentState):
     """Simulates a quality check or a safety filter."""
-    print("[INFO] Node [Validator]: Checking output quality...")
+    logger.info("Node [Validator]: Checking output quality...")
     report = state["report"] or ""
     
     # Intentionally trigger an error for specific queries to test AgentStack's error tracing
     if "fail" in state["query"].lower():
-        print("[WARNING] Simulating intentional failure for testing...")
+        logger.warning("Simulating intentional failure for testing...")
         raise ValueError("Simulated Validation Error: Output contains restricted content policy violation.")
     
     return state
@@ -113,17 +119,17 @@ def build_agent():
 
 # ── RUN ────────────────────────────────────────────────────────────────────────
 def run_test(query: str):
-    print(f"\n[RUN] Running Agent with query: '{query}'")
+    logger.info(f"Running Agent with query: '{query}'")
     agent = build_agent()
     
     try:
         result = agent.invoke({"query": query})
-        print("[SUCCESS] Agent Execution Finished Successfully.")
+        logger.info("Agent Execution Finished Successfully.")
         print("-" * 50)
         print(result.get("report", "No report generated."))
         print("-" * 50)
     except Exception as e:
-        print(f"[ERROR] Agent Execution Failed: {e}")
+        logger.error(f"Agent Execution Failed: {e}")
 
 if __name__ == "__main__":
     # Test 1: Successful Research
@@ -134,14 +140,14 @@ if __name__ == "__main__":
     # Test 2: Failure Simulation (to see how errors look in the dashboard)
     run_test("Simulate a failure or restricted content scenario.")
 
-    # Ensure traces are sent to local backend
-    print("\nFlushing Traces to AgentStack Dashboard...")
+    # Ensure traces are sent to backend
+    logger.info("Flushing Traces to AgentStack Dashboard...")
     try:
         from agentstack.exporter import get_processor
         processor = get_processor()
         if processor:
             processor.flush()
-    except Exception:
-        pass
-    print("Done! Explore the generated traces in the Dashboard.")
+    except Exception as e:
+        logger.warning(f"Failed to flush traces: {e}")
+    logger.info("Done! Explore the generated traces in the Dashboard.")
 

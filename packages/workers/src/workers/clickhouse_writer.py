@@ -1,6 +1,8 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
@@ -118,14 +120,9 @@ class ClickHouseWriter(BaseConsumer):
     async def process_message(self, message_id: bytes, data: Dict[bytes, bytes]):
         """Accumulate messages in buffer."""
         try:
-            # Decode MsgPack
             if b"data" in data:
                 payload = self.decode_msgpack(data[b"data"])
                 self.buffer.append((message_id, payload))
-            else:
-                logger.warning(f"Skipping malformed message {message_id}: missing 'data' field")
-                # We still ack validly formatted but empty messages to move past them?
-                # Actually, better to let them be acked in the batch.
         except Exception as e:
             logger.error(f"Error decoding message {message_id}: {e}")
 
@@ -156,11 +153,11 @@ class ClickHouseWriter(BaseConsumer):
                 span.get("name"),
                 span.get("service_name", "unknown"),
                 span.get("status", "UNSET"),
-                span.get("start_time"), # DateTime64 expects int/float timestamp? clickhouse-connect handles python datetime or int
+                span.get("start_time"),  # DateTime64 — clickhouse-connect handles int/float timestamps
                 span.get("end_time"),
                 span.get("duration_ms"),
-                span.get("attributes", {}), # Map(String, String)
-                json.dumps(span.get("events", [])), # String (JSON)
+                span.get("attributes", {}),  # Map(String, String)
+                json.dumps(span.get("events", [])),  # String (JSON)
             ])
 
         if not spans_to_insert:
@@ -183,11 +180,8 @@ class ClickHouseWriter(BaseConsumer):
             
         except Exception as e:
             logger.error(f"Failed to flush batch to ClickHouse: {e}")
-            # Infinite retry logic is implicit: we don't clear buffer, next loop will retry?
-            # Actually, if we fail here, we should probably throw or sleep so we don't ACK.
-            # Base consumer loop catches and sleeps.
-            # But we must NOT clear self.buffer if we want to retry.
-            # Re-raising exception will trigger the BaseConsumer's error handler (sleep 1s) and retry.
+            # Re-raise to trigger circuit breaker and retry logic in BaseConsumer
+            # Buffer is NOT cleared on failure so data is retained for next flush attempt
             raise
 
         # Clear buffer on success

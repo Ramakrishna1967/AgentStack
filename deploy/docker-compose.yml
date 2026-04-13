@@ -12,7 +12,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-agentstack-redis-secret-2026}", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -33,7 +33,7 @@ services:
     environment:
       CLICKHOUSE_DB: ${CLICKHOUSE_DB:-default}
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     ulimits:
       nofile:
         soft: 262144
@@ -55,9 +55,9 @@ services:
       - clickhouse
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
       - JWT_SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-production}
     volumes:
@@ -80,7 +80,7 @@ services:
       - api
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     volumes:
       - api_data:/data
@@ -102,10 +102,10 @@ services:
       - redis
       - clickhouse
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
     deploy:
       resources:
         limits:
@@ -121,10 +121,10 @@ services:
       - redis
       - clickhouse
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
     deploy:
       resources:
         limits:
@@ -140,10 +140,10 @@ services:
       - redis
       - clickhouse
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-agentstack-redis-secret-2026}@redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-agentstack-ch-secret-2026}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
     deploy:
       resources:
         limits:

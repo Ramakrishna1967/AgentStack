@@ -18,11 +18,18 @@ Usage:
 from __future__ import annotations
 
 import contextvars
+import logging
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator
 
 if TYPE_CHECKING:
     from agentstack.tracer import Span
+
+logger = logging.getLogger("agentstack.context")
+
+# ── Configuration ───────────────────────────────────────────────────────
+# Maximum span nesting depth to prevent stack overflow
+_MAX_SPAN_DEPTH = 100
 
 # ── Context Variables ──────────────────────────────────────────────────
 # These are the two core context vars that propagate across async boundaries.
@@ -68,6 +75,8 @@ def span_context(span: Span) -> Generator[Span, None, None]:
     While inside this context, any new spans created will automatically
     have their parent_span_id set to this span's span_id.
 
+    SECURITY: Enforces max nesting depth to prevent stack overflow attacks.
+
     Args:
         span: The Span to make "current".
 
@@ -76,6 +85,18 @@ def span_context(span: Span) -> Generator[Span, None, None]:
     """
     # Get or create a new stack for this context (important for async copy-on-write)
     stack = _span_stack_var.get([])
+    
+    # SECURITY: Check max nesting depth to prevent stack overflow
+    if len(stack) >= _MAX_SPAN_DEPTH:
+        logger.warning(f"Span nesting depth limit ({_MAX_SPAN_DEPTH}) reached. "
+                      f"New span will not be added to context stack. "
+                      f"This may indicate infinite recursion or excessive nesting.")
+        # Still yield the span but don't add to stack to prevent overflow
+        try:
+            yield span
+        finally:
+            return
+    
     new_stack = stack.copy()
     new_stack.append(span)
     token_stack = _span_stack_var.set(new_stack)

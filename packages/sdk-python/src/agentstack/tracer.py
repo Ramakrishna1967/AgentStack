@@ -165,6 +165,13 @@ class Span:
         # Record end timing
         self.end_time_ns = wall_clock_ns()
         self._end_mono_ns = monotonic_ns()
+        
+        # Validate timing: ensure end is after start
+        if self.end_time_ns < self.start_time_ns:
+            logger.warning(f"Span {self.span_id[:8]}... has end_time before start_time, correcting")
+            self.end_time_ns = self.start_time_ns
+        if self._end_mono_ns < self._start_mono_ns:
+            self._end_mono_ns = self._start_mono_ns
 
         # Sanitize PII before export (import here to avoid circular import)
         try:

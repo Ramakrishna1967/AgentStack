@@ -73,11 +73,22 @@ class HttpTransport:
 
     def __init__(
         self,
-        collector_url: str = "http://localhost:4318",
+        collector_url: str = "https://localhost:4318",
         api_key: str = "",
         timeout_s: float = _TIMEOUT_S,
         max_retries: int = _MAX_RETRIES,
     ) -> None:
+        # SECURITY: Warn about HTTP usage in production
+        if collector_url.startswith("http://"):
+            import os
+            env = os.environ.get("ENVIRONMENT", "development")
+            if env not in ("development", "dev", "local"):
+                logger.warning(
+                    f"SECURITY: Using HTTP for collector URL in {env} environment. "
+                    f"API keys and traces will be sent unencrypted. "
+                    f"Use HTTPS in production!"
+                )
+        
         self._url = collector_url.rstrip("/") + "/v1/traces"
         self._api_key = api_key
         self._timeout = timeout_s

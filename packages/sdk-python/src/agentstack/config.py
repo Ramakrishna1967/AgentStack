@@ -54,7 +54,7 @@ class AgentStackConfig:
     """
 
     api_key: str = ""
-    collector_url: str = "http://localhost:4318"
+    collector_url: str = "https://localhost:4318"
     enabled: bool = True
     batch_size: int = 64
     export_interval_ms: int = 5000

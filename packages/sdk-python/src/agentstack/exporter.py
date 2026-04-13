@@ -161,13 +161,25 @@ class BatchSpanProcessor:
         if not export_dicts:
             return
 
-        # Attempt remote export
+        # Attempt remote export with metrics tracking
         if self._transport:
+            start_time = time.monotonic()
             result = self._transport.send(export_dicts)
+            latency_ms = (time.monotonic() - start_time) * 1000.0
+            
+            try:
+                from agentstack.metrics import get_metrics
+                get_metrics().record_export(len(export_dicts), latency_ms, result.success)
+                if not result.success:
+                    get_metrics().increment("export_retries")
+            except ImportError:
+                pass
+            
             if result.success:
                 self._exported_count += len(export_dicts)
                 logger.debug(
-                    "Exported %d spans (total: %d)", len(export_dicts), self._exported_count
+                    "Exported %d spans (total: %d, latency: %.1fms)", 
+                    len(export_dicts), self._exported_count, latency_ms
                 )
                 return
             else:
@@ -177,6 +189,11 @@ class BatchSpanProcessor:
         # Fallback: save to local SQLite
         saved = self._local_store.save_spans(span_models)
         self._fallback_count += saved
+        try:
+            from agentstack.metrics import get_metrics
+            get_metrics().increment("local_store_saves", saved)
+        except ImportError:
+            pass
         logger.debug("Saved %d spans to local store (total fallback: %d)", saved, self._fallback_count)
 
     def _retry_unsent(self) -> None:
@@ -184,7 +201,17 @@ class BatchSpanProcessor:
         if not self._transport:
             return
 
-        unsent = self._local_store.get_unsent_spans(limit=100)
+        try:
+            unsent = self._local_store.get_unsent_spans(limit=100)
+        except Exception:
+            logger.debug("Failed to retrieve unsent spans from local store", exc_info=True)
+            try:
+                from agentstack.metrics import get_metrics
+                get_metrics().increment("local_store_errors")
+            except ImportError:
+                pass
+            return
+            
         if not unsent:
             return
 
@@ -195,6 +222,11 @@ class BatchSpanProcessor:
             span_ids = [s.span_id for s in unsent]
             self._local_store.mark_as_sent(span_ids)
             self._exported_count += len(span_ids)
+            try:
+                from agentstack.metrics import get_metrics
+                get_metrics().increment("local_store_retrievals", len(span_ids))
+            except ImportError:
+                pass
             logger.debug("Replayed %d unsent spans from local store", len(span_ids))
 
     def shutdown(self, timeout_s: float = 5.0) -> None:
