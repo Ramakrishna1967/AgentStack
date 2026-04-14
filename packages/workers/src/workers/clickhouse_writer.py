@@ -145,6 +145,16 @@ class ClickHouseWriter(BaseConsumer):
             message_ids.append(msg_id)
             
             # Helper to safely get fields
+            # Convert nanos to micros for ClickHouse DateTime64(6)
+            # 1.7e18 / 1000 = 1.7e15 (correct for microseconds)
+            start_time = span.get("start_time")
+            if start_time and start_time > 1e16: # Likely nanoseconds
+                start_time //= 1000
+                
+            end_time = span.get("end_time")
+            if end_time and end_time > 1e16:
+                end_time //= 1000
+
             spans_to_insert.append([
                 span.get("span_id"),
                 span.get("trace_id"),
@@ -153,8 +163,8 @@ class ClickHouseWriter(BaseConsumer):
                 span.get("name"),
                 span.get("service_name", "unknown"),
                 span.get("status", "UNSET"),
-                span.get("start_time"),  # DateTime64 — clickhouse-connect handles int/float timestamps
-                span.get("end_time"),
+                start_time,
+                end_time,
                 span.get("duration_ms"),
                 span.get("attributes", {}),  # Map(String, String)
                 json.dumps(span.get("events", [])),  # String (JSON)

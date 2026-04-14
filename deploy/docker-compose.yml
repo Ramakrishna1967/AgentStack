@@ -60,6 +60,7 @@ services:
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
       - JWT_SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEMO_MODE=${DEMO_MODE:-False}
     volumes:
       - api_data:/data
     ports:

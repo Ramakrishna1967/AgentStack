@@ -40,7 +40,7 @@ const LiveFeed: React.FC = () => {
             <div className="max-h-[400px] overflow-y-auto">
                 {liveSpans.length === 0 ? (
                     <div className="p-8 text-center text-[var(--text-secondary)]">
-                        <p className="text-lg mb-2">📡</p>
+                        <p className="text-lg mb-2">Feed active</p>
                         <p className="text-sm">Waiting for incoming spans...</p>
                         <p className="text-xs text-[var(--text-tertiary)] mt-1">
                             Spans will appear here in real-time

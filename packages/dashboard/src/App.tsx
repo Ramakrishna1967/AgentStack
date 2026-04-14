@@ -162,6 +162,7 @@ const App: React.FC = () => {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/deployments" element={<Dashboard />} />
+              <Route path="/login" element={<LoginPage />} />
               <Route path="*" element={<div style={{ textAlign: "center", paddingTop: 80, color: "#555" }}>404 — Not Found</div>} />
             </Routes>
           </main>

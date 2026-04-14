@@ -83,13 +83,23 @@ async def list_traces(
 
     traces = []
     for row in rows:
-        # Convert ClickHouse datetime/duration to frontend format
+        # HIGH-5 FIX: Robust timestamp conversion to avoid 'year out of range' crashes
+        try:
+            start_ns = int(row["start_time"].timestamp() * 1e9)
+        except (ValueError, OverflowError, AttributeError):
+            start_ns = int(time.time() * 1e9) # Fallback to now
+            
+        try:
+            end_ns = int(row["end_time"].timestamp() * 1e9)
+        except (ValueError, OverflowError, AttributeError):
+            end_ns = start_ns + 1000 # Minimal duration fallback
+
         traces.append({
             "trace_id": row["trace_id"],
             "project_id": row["project_id"],
-            "start_time": int(row["start_time"].timestamp() * 1e9), # Back to nano
-            "end_time": int(row["end_time"].timestamp() * 1e9),
-            "duration_ms": (row["end_time"] - row["start_time"]).total_seconds() * 1000,
+            "start_time": start_ns,
+            "end_time": end_ns,
+            "duration_ms": (end_ns - start_ns) / 1e6,
             "status": row["status"],
             "span_count": row["span_count"],
         })

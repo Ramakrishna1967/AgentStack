@@ -30,17 +30,20 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
                 });
             }, 1000); // 1 second per step (could make this configurable)
         } else if (isPlaying && spans && currentIndex >= spans.length - 1) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsPlaying(false); // Stop playing when at the end
         }
 
         return () => clearInterval(interval);
     }, [isPlaying, currentIndex, spans]);
 
-    // Reset when trace changes
-    useEffect(() => {
+    // Reset when trace changes using derived state pattern
+    const [prevTraceId, setPrevTraceId] = useState(traceId);
+    if (traceId !== prevTraceId) {
+        setPrevTraceId(traceId);
         setCurrentIndex(0);
         setIsPlaying(false);
-    }, [traceId]);
+    }
 
     if (isLoading) {
         return (
@@ -85,7 +88,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
                         className="p-2 rounded hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors"
                         title="Rewind to Start"
                     >
-                        ⏮️
+                        Reset
                     </button>
                     <button
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
@@ -100,7 +103,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
                         className={`p-2 rounded transition-colors ${isPlaying ? 'bg-[var(--accent-blue)] text-white' : 'hover:bg-[var(--bg-hover)]'}`}
                         title={isPlaying ? "Pause" : "Play"}
                     >
-                        {isPlaying ? "⏸️" : "▶️"}
+                        {isPlaying ? "Pause" : "Play"}
                     </button>
                     <button
                         onClick={() => setCurrentIndex(prev => Math.min(spans.length - 1, prev + 1))}
