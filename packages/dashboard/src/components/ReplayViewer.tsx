@@ -30,7 +30,6 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
                 });
             }, 1000); // 1 second per step (could make this configurable)
         } else if (isPlaying && spans && currentIndex >= spans.length - 1) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsPlaying(false); // Stop playing when at the end
         }
 
@@ -39,9 +38,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
 
     // Reset when trace changes
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentIndex(0);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsPlaying(false);
     }, [traceId]);
 
