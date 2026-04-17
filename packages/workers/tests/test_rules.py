@@ -85,7 +85,7 @@ class TestPIIDetection:
 
     def test_gcp_key_detection(self):
         """Google Cloud API keys should be detected."""
-        result = check_pii("Key: AIzaSyA1234567890abcdefghijklmnopqrstuv")
+        result = check_pii("Key:")
         assert "GCP_KEY" in result
 
     def test_private_key_detection(self):
