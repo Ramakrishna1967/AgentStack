@@ -103,7 +103,7 @@ class CostCalculator(BaseConsumer):
         if not model:
             return # Skip non-LLM spans
             
-        # Extract tokens — support both OpenTelemetry-style (llm.usage.*) and SDK-style (llm.tokens.*)
+        # Extract tokens  support both OpenTelemetry-style (llm.usage.*) and SDK-style (llm.tokens.*)
         prompt_tokens = int(attrs.get("llm.usage.prompt_tokens", attrs.get("llm.tokens.in", 0)))
         completion_tokens = int(attrs.get("llm.usage.completion_tokens", attrs.get("llm.tokens.out", 0)))
         total_tokens = int(attrs.get("llm.usage.total_tokens", prompt_tokens + completion_tokens))
@@ -176,7 +176,7 @@ class CostCalculator(BaseConsumer):
             
         except Exception as e:
             logger.error(f"Failed to flush costs: {e}")
-            # Don't clear buffer — retain data for retry on next flush cycle
+            # Don't clear buffer  retain data for retry on next flush cycle
             return
 
         self.buffer = []

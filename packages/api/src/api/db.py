@@ -95,10 +95,10 @@ class Database:
             current_version = row[0] if row[0] is not None else 0
             
             if current_version == 0:
-                # Fresh install — apply all migrations
+                # Fresh install  apply all migrations
                 await self._apply_migrations(conn, from_version=0)
             elif current_version < self._LATEST_VERSION:
-                # Existing DB — apply pending migrations
+                # Existing DB  apply pending migrations
                 logger.info(f"Upgrading schema from v{current_version} to v{self._LATEST_VERSION}")
                 await self._apply_migrations(conn, from_version=current_version)
 

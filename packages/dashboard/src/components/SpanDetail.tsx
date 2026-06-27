@@ -32,7 +32,7 @@ const SpanDetail: React.FC<SpanDetailProps> = ({ span, onClose }) => {
                     onClick={onClose}
                     className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
-                    ✕
+                    
                 </button>
             </div>
 

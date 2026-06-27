@@ -16,7 +16,7 @@
 [![ClickHouse](https://img.shields.io/badge/ClickHouse-24.3-FFCC01.svg?style=flat-square&logo=clickhouse&logoColor=black)](https://clickhouse.com)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/agentstack/agentstack/pulls)
 
-AgentStack gives you **real-time tracing, security analysis, cost tracking, and Time Machine replay** for AI agents — without changing how you build them.
+AgentStack gives you **real-time tracing, security analysis, cost tracking, and Time Machine replay** for AI agents  without changing how you build them.
 
 Works with **LangGraph** &nbsp;&middot;&nbsp; **CrewAI** &nbsp;&middot;&nbsp; **AutoGen** &nbsp;&middot;&nbsp; **Custom Python**
 
@@ -65,7 +65,7 @@ async def async_agent(objective: str) -> list[str]:
     return await llm.achat(f"Break this into steps: {objective}")
 ```
 
-Every call now produces a full trace — arguments, return values, timing, exceptions, token counts, and cost — visible instantly in the dashboard.
+Every call now produces a full trace  arguments, return values, timing, exceptions, token counts, and cost  visible instantly in the dashboard.
 
 > **Zero-interference guarantee.** The `@observe` decorator will never crash your application. If AgentStack encounters an internal error, your function executes normally and the SDK fails silently.
 
@@ -80,9 +80,9 @@ Most observability tools are designed for web services. AI agents have fundament
 | **Request duration** | Milliseconds | Minutes to hours | Durable traces with offline fallback |
 | **Cost** | Fixed infra | Variable per-token billing | Per-model cost tracking with timeseries |
 | **Security** | Known attack vectors | Prompt injection, PII leakage | Real-time detection engine |
-| **Debugging** | Deterministic stack traces | Non-deterministic LLM behavior | Time Machine — step-by-step replay |
+| **Debugging** | Deterministic stack traces | Non-deterministic LLM behavior | Time Machine  step-by-step replay |
 | **Data sensitivity** | Headers and bodies | Full conversation text | Auto-PII sanitization before export |
-| **Call structure** | Flat request/response | Deep nested trees (agent → tool → LLM → tool) | Automatic parent-child span linking |
+| **Call structure** | Flat request/response | Deep nested trees (agent  tool  LLM  tool) | Automatic parent-child span linking |
 
 <br>
 
@@ -101,7 +101,7 @@ Automatically capture every LLM call, tool invocation, and function execution as
 
 **Time Machine Replay**
 
-Step through any past agent execution span-by-span. See exactly which LLM calls were made, what each tool returned, and which decision path was taken — without reproducing the failure.
+Step through any past agent execution span-by-span. See exactly which LLM calls were made, what each tool returned, and which decision path was taken  without reproducing the failure.
 
 </td>
 </tr>
@@ -117,7 +117,7 @@ Detect prompt injection, PII leakage, and anomalous behavior in real time. Secur
 
 **Automatic PII Sanitization**
 
-Every span is scrubbed before export. SSNs, credit card numbers, emails, phone numbers, AWS keys, and OpenAI keys are detected and redacted automatically — no config required.
+Every span is scrubbed before export. SSNs, credit card numbers, emails, phone numbers, AWS keys, and OpenAI keys are detected and redacted automatically  no config required.
 
 </td>
 </tr>
@@ -126,7 +126,7 @@ Every span is scrubbed before export. SSNs, credit card numbers, emails, phone n
 
 **Cost Analytics**
 
-Per-model token counting and USD cost calculation with timeseries charts. Track spend across GPT-4, Claude, Gemini, and any other provider — broken down by hour, day, or week.
+Per-model token counting and USD cost calculation with timeseries charts. Track spend across GPT-4, Claude, Gemini, and any other provider  broken down by hour, day, or week.
 
 </td>
 <td width="50%" valign="top">
@@ -193,7 +193,7 @@ Non-root containers, JWT auth with brute-force lockout, SHA-256 API key caching,
 | Package | Stack | Role |
 |---------|-------|------|
 | `packages/sdk-python` | Python 3.10+, Pydantic v2 | `@observe` decorator, context propagation, PII scrubber, batching, transport |
-| `packages/collector` | FastAPI, Redis | Ingestion endpoint — validates, authenticates, and streams spans |
+| `packages/collector` | FastAPI, Redis | Ingestion endpoint  validates, authenticates, and streams spans |
 | `packages/workers` | Python, Redis Streams | Three independent processors: ClickHouse writer, security engine, cost calculator |
 | `packages/api` | FastAPI, SQLite, ClickHouse | REST API, WebSocket live feeds, JWT auth, trace replay |
 | `packages/dashboard` | React 19, TypeScript, Vite, Recharts | Real-time trace viewer, analytics, Time Machine, security alerts |
@@ -205,24 +205,24 @@ Non-root containers, JWT auth with brute-force lockout, SHA-256 API key caching,
 
 ```
 .
-├── packages/
-│   ├── sdk-python/        # Python SDK (pip install agentstack-sdk)
-│   ├── collector/         # Trace ingestion server
-│   ├── workers/           # Background stream processors
-│   ├── api/               # REST API and WebSocket server
-│   └── dashboard/         # React frontend
-│
-├── deploy/
-│   ├── docker-compose.yml
-│   ├── nginx/
-│   ├── redis/
-│   └── clickhouse/
-│
-├── tests/                 # Integration tests
-├── examples/              # Example agent scripts
-├── .github/workflows/     # CI — lint, typecheck, bandit, build
-├── LICENSE
-└── README.md
+ packages/
+    sdk-python/        # Python SDK (pip install agentstack-sdk)
+    collector/         # Trace ingestion server
+    workers/           # Background stream processors
+    api/               # REST API and WebSocket server
+    dashboard/         # React frontend
+
+ deploy/
+    docker-compose.yml
+    nginx/
+    redis/
+    clickhouse/
+
+ tests/                 # Integration tests
+ examples/              # Example agent scripts
+ .github/workflows/     # CI  lint, typecheck, bandit, build
+ LICENSE
+ README.md
 ```
 
 <br>
@@ -242,13 +242,13 @@ cp .env.example .env
 docker compose up -d
 ```
 
-The stack starts 8 containers: Redis, ClickHouse, Collector, API, three Workers, and the Dashboard — all with health checks and memory limits.
+The stack starts 8 containers: Redis, ClickHouse, Collector, API, three Workers, and the Dashboard  all with health checks and memory limits.
 
 **Environment variables required:**
 
 | Variable | Description |
 |----------|-------------|
-| `SECRET_KEY` | JWT signing secret — generate with `openssl rand -hex 32` |
+| `SECRET_KEY` | JWT signing secret  generate with `openssl rand -hex 32` |
 | `REDIS_PASSWORD` | Redis authentication password |
 | `CLICKHOUSE_PASSWORD` | ClickHouse database password |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins |
@@ -287,7 +287,7 @@ To report a security vulnerability, please open a [GitHub Security Advisory](htt
 
 ## Contributing
 
-Contributions are welcome — from bug reports and docs improvements to new framework integrations and features.
+Contributions are welcome  from bug reports and docs improvements to new framework integrations and features.
 
 **Development setup:**
 
@@ -315,7 +315,7 @@ Please open an issue before starting on significant changes so we can discuss th
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE) for details.
+Apache 2.0  see [LICENSE](LICENSE) for details.
 
 Copyright 2026 AgentStack Contributors.
 

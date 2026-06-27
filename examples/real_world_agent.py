@@ -9,7 +9,7 @@ import time
 import logging
 from typing import TypedDict, Optional
 
-# ── API CONFIGURATION ──────────────────────────────────────────────────────────
+#  API CONFIGURATION 
 # Get API keys from environment variables (NEVER hardcode in production)
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
@@ -42,11 +42,11 @@ except ImportError as e:
         print(f"Deployment Error: Missing dependencies. Error: {e}")
         sys.exit(1)
 
-# ── INITIALIZE AGENTSTACK ──────────────────────────────────────────────────────
+#  INITIALIZE AGENTSTACK 
 # auto_instrument=True automatically monkey-patches LangGraph nodes
 agentstack.init(auto_instrument=True)
 
-# ── DEFINITIONS ────────────────────────────────────────────────────────────────
+#  DEFINITIONS 
 class AgentState(TypedDict):
     query: str
     plan: Optional[str]
@@ -57,7 +57,7 @@ class AgentState(TypedDict):
 # Using a more compatible model string
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0)
 
-# ── NODES ──────────────────────────────────────────────────────────────────────
+#  NODES 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def validator_node(state: AgentState):
     
     return state
 
-# ── BUILD GRAPH ────────────────────────────────────────────────────────────────
+#  BUILD GRAPH 
 def build_agent():
     workflow = StateGraph(AgentState)
     
@@ -117,7 +117,7 @@ def build_agent():
     
     return workflow.compile()
 
-# ── RUN ────────────────────────────────────────────────────────────────────────
+#  RUN 
 def run_test(query: str):
     logger.info(f"Running Agent with query: '{query}'")
     agent = build_agent()

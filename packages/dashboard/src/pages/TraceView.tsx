@@ -6,7 +6,7 @@ import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
 import type { Span } from "../lib/types";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+//  Types 
 interface RealTrace {
   trace_id: string;
   project_id: string;
@@ -18,7 +18,7 @@ interface RealTrace {
   end_time: number;
 }
 
-// ── Status Icon ────────────────────────────────────────────────────────────────
+//  Status Icon 
 const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
   const isErr = status === "ERROR";
   return (
@@ -33,7 +33,7 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
   );
 };
 
-// ── Gantt Bar Chart ─────────────────────────────────────────────────────────
+//  Gantt Bar Chart 
 const GanttChart: React.FC<{ spans: Span[] }> = ({ spans }) => {
   if (spans.length === 0) return null;
   const minTime = Math.min(...spans.map(s => s.start_time));
@@ -59,7 +59,7 @@ const GanttChart: React.FC<{ spans: Span[] }> = ({ spans }) => {
           <div key={span.span_id} style={{ display: "flex", alignItems: "center", height: 32, marginBottom: 2 }}>
             {/* Name */}
             <div style={{ width: 180, minWidth: 180, paddingLeft: 8 + depth * 16, fontSize: 12, color: "#ccc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {depth > 0 && <span style={{ color: "#444", marginRight: 4 }}>{'└'}</span>}
+              {depth > 0 && <span style={{ color: "#444", marginRight: 4 }}>{''}</span>}
               {span.name}
             </div>
             {/* Bar area */}
@@ -86,7 +86,7 @@ const GanttChart: React.FC<{ spans: Span[] }> = ({ spans }) => {
   );
 };
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
+//  KPI Card 
 const KPICard: React.FC<{ label: string; value: string; sub: string }> = ({ label, value, sub }) => (
   <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: "16px", flex: "1" }}>
     <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", marginBottom: 2 }}>{label}</div>
@@ -95,7 +95,7 @@ const KPICard: React.FC<{ label: string; value: string; sub: string }> = ({ labe
   </div>
 );
 
-// ── Trace Analysis detail ──────────────────────────────────────────────────────
+//  Trace Analysis detail 
 const TraceDetail: React.FC<{ trace: RealTrace; onBack: () => void }> = ({ trace, onBack }) => {
   const [spans, setSpans] = useState<Span[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,7 +119,7 @@ const TraceDetail: React.FC<{ trace: RealTrace; onBack: () => void }> = ({ trace
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-           <button onClick={onBack} style={{ background: "transparent", border: "1px solid #333", color: "#888", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}>←</button>
+           <button onClick={onBack} style={{ background: "transparent", border: "1px solid #333", color: "#888", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}></button>
            <div style={{ fontSize: 20, fontWeight: 600 }}>Trace Analysis</div>
         </div>
       </div>
@@ -142,7 +142,7 @@ const TraceDetail: React.FC<{ trace: RealTrace; onBack: () => void }> = ({ trace
   );
 };
 
-// ── Traces List ───────────────────────────────────────────────────────────────
+//  Traces List 
 const TraceView: React.FC = () => {
   const { currentProject } = useProject();
   const [traces, setTraces] = useState<RealTrace[]>([]);
@@ -205,7 +205,7 @@ const TraceView: React.FC = () => {
             <div style={{ fontSize: 13, color: "#aaa" }}>{(trace.duration_ms / 1000).toFixed(2)}s</div>
             <div style={{ fontSize: 13, color: "#aaa" }}>{trace.span_count}</div>
             <div style={{ fontSize: 12, color: "#555" }}>{new Date(trace.start_time / 1e6).toLocaleString()}</div>
-            <div style={{ color: "#444", textAlign: "right" }}>›</div>
+            <div style={{ color: "#444", textAlign: "right" }}></div>
           </div>
         ))}
       </div>

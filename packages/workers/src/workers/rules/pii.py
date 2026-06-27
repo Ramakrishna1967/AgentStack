@@ -110,13 +110,13 @@ def check_pii(text: str) -> list[str]:
     for name, (pattern, validator) in PATTERNS.items():
         for match in pattern.finditer(text):
             if validator is None:
-                # No validator — pattern is specific enough
+                # No validator  pattern is specific enough
                 detected.append(name)
                 break
             elif validator(match):
                 # Validator confirmed the match
                 detected.append(name)
                 break
-            # Validator rejected — continue searching for other matches
+            # Validator rejected  continue searching for other matches
 
     return detected

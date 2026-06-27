@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Authentication routes — JWT login and registration for dashboard users."""
+"""Authentication routes  JWT login and registration for dashboard users."""
 
 from __future__ import annotations
 

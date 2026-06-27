@@ -82,7 +82,7 @@ def check_injection(text: str) -> float:
             score += weight
             tier2_hits += 1
 
-    # Check Tier 3 (low confidence — only adds weight if other tiers matched)
+    # Check Tier 3 (low confidence  only adds weight if other tiers matched)
     if tier1_hits > 0 or tier2_hits > 0:
         for pattern, weight in TIER3_PATTERNS:
             if pattern.search(text):

@@ -17,7 +17,7 @@ interface AnalyticsData {
   total_tokens: number;
 }
 
-// ── Sparkline ─────────────────────────────────────────────────────────────────
+//  Sparkline 
 const Sparkline: React.FC<{ up?: boolean }> = ({ up = true }) => {
   const path = up
     ? "M 0 28 C 10 24 20 26 30 18 C 40 12 50 16 60 10 C 70 5 80 8 90 3"
@@ -29,7 +29,7 @@ const Sparkline: React.FC<{ up?: boolean }> = ({ up = true }) => {
   );
 };
 
-// ── Bar Chart from real latency data ──────────────────────────────────────────
+//  Bar Chart from real latency data 
 const BarChart: React.FC<{ bars: number[] }> = ({ bars }) => {
   const max = Math.max(...bars, 1);
   return (
@@ -47,7 +47,7 @@ const BarChart: React.FC<{ bars: number[] }> = ({ bars }) => {
   );
 };
 
-// ── KPI Card ─────────────────────────────────────────────────────────────────
+//  KPI Card 
 interface MetricCardProps {
   label: string; value: string; change?: string; positive?: boolean;
 }
@@ -77,7 +77,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, change, positive 
   </div>
 );
 
-// ── Metrics Page ──────────────────────────────────────────────────────────────
+//  Metrics Page 
 const Metrics: React.FC = () => {
   const { currentProject } = useProject();
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -149,12 +149,12 @@ const Metrics: React.FC = () => {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
             <MetricCard
               label="Avg Latency"
-              value={data ? `${fmt(data.avg_latency_ms / 1000)}s` : "—"}
+              value={data ? `${fmt(data.avg_latency_ms / 1000)}s` : ""}
               positive={true}
             />
             <MetricCard
               label="p95 Latency"
-              value={data ? `${fmt(data.p95_latency_ms / 1000)}s` : "—"}
+              value={data ? `${fmt(data.p95_latency_ms / 1000)}s` : ""}
               positive={true}
             />
             <MetricCard
@@ -164,17 +164,17 @@ const Metrics: React.FC = () => {
             />
             <MetricCard
               label="Success Rate"
-              value={data ? `${fmt(data.success_rate, 1)}%` : "—"}
+              value={data ? `${fmt(data.success_rate, 1)}%` : ""}
               positive={true}
             />
             <MetricCard
               label="Avg Spans / Trace"
-              value={data ? fmt(data.avg_spans, 1) : "—"}
+              value={data ? fmt(data.avg_spans, 1) : ""}
               positive={true}
             />
             <MetricCard
               label="Error Rate"
-              value={data ? `${fmt(data.error_rate, 1)}%` : "—"}
+              value={data ? `${fmt(data.error_rate, 1)}%` : ""}
               positive={data ? data.error_rate === 0 : true}
             />
           </div>
@@ -182,7 +182,7 @@ const Metrics: React.FC = () => {
           <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 8, padding: "18px" }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Request Latency Distribution</div>
             <div style={{ fontSize: 12, color: "#555", marginBottom: 20 }}>
-              Latency per trace — last {latencyBars.length} traces (ms)
+              Latency per trace  last {latencyBars.length} traces (ms)
             </div>
             <BarChart bars={latencyBars} />
           </div>

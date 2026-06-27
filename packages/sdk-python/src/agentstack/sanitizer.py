@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""PII Sanitizer — regex-based scrubber that runs on all span attributes before export.
+"""PII Sanitizer  regex-based scrubber that runs on all span attributes before export.
 
 Detects and replaces sensitive data with [REDACTED] tokens. This runs on the hot
 path (every span), so all patterns are pre-compiled and the implementation is
@@ -29,7 +29,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# ── Redaction Tokens ───────────────────────────────────────────────────
+#  Redaction Tokens 
 
 REDACTED_SSN = "[REDACTED_SSN]"
 REDACTED_EMAIL = "[REDACTED_EMAIL]"
@@ -39,7 +39,7 @@ REDACTED_AWS_KEY = "[REDACTED_AWS_KEY]"
 REDACTED_OPENAI_KEY = "[REDACTED_OPENAI_KEY]"
 REDACTED_API_KEY = "[REDACTED_API_KEY]"
 
-# ── Compiled Regex Patterns ───────────────────────────────────────────
+#  Compiled Regex Patterns 
 # All patterns are compiled once at module import for maximum performance.
 
 _PATTERNS: list[tuple[re.Pattern[str], str]] = [
@@ -120,10 +120,10 @@ def scrub_pii(attributes: dict[str, str]) -> dict[str, str]:
 
     Scans each string value for PII patterns and replaces matches
     with typed [REDACTED_*] tokens. Non-string values and keys are
-    left untouched. Returns a NEW dictionary — the input is not modified.
+    left untouched. Returns a NEW dictionary  the input is not modified.
 
     Args:
-        attributes: Span attributes dict (key → string value).
+        attributes: Span attributes dict (key  string value).
 
     Returns:
         A new dict with PII replaced by redaction tokens.

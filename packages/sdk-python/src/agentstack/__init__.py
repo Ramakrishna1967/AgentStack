@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""AgentStack SDK — Chrome DevTools for AI Agents.
+"""AgentStack SDK  Chrome DevTools for AI Agents.
 
 Provides observability for AI Agents built on LangGraph, CrewAI, AutoGen,
 and custom Python implementations.
@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING
 from agentstack.config import AgentStackConfig, get_config, reset_config
 from agentstack.tracer import Span, Tracer
 
-# Lazy import to avoid circular dependency — decorator is built in Step 2
+# Lazy import to avoid circular dependency  decorator is built in Step 2
 # For now, provide a placeholder that gets replaced on first access.
 _observe_func = None
 
@@ -67,10 +67,10 @@ def observe(func=None, *, name: str | None = None):
 
         return _obs(func, name=name)
     except ImportError:
-        # decorator.py not yet created (Step 2) — return function unmodified
+        # decorator.py not yet created (Step 2)  return function unmodified
         if func is not None:
             return func
-        # Called with arguments: @observe(name="x") — return identity decorator
+        # Called with arguments: @observe(name="x")  return identity decorator
         def _identity(f):
             return f
         return _identity

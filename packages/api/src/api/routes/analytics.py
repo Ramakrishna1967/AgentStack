@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Analytics routes — cost tracking and timeseries data."""
+"""Analytics routes  cost tracking and timeseries data."""
 
 from __future__ import annotations
 

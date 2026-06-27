@@ -10,7 +10,7 @@ from workers.rules.pii import check_pii
 from workers.rules.anomaly import check_anomaly
 
 
-# ── Injection Detection Tests ──────────────────────────────────────────
+#  Injection Detection Tests 
 
 class TestInjectionDetection:
     def test_clean_text_no_alert(self):
@@ -34,7 +34,7 @@ class TestInjectionDetection:
 
     def test_legitimate_system_prompt_no_false_positive(self):
         """Mentioning 'system prompt' alone should not trigger Tier 1."""
-        # The old regex would flag this — the new one should not
+        # The old regex would flag this  the new one should not
         score = check_injection("The system prompt is configured correctly")
         assert score < 50.0  # Should be low or zero
 
@@ -55,10 +55,10 @@ class TestInjectionDetection:
     def test_tier3_only_no_score(self):
         """Tier 3 patterns alone should not contribute to score."""
         score = check_injection("You are not a helper")
-        assert score == 0.0  # Tier 3 only — should not count without Tier 1/2
+        assert score == 0.0  # Tier 3 only  should not count without Tier 1/2
 
 
-# ── PII Detection Tests ────────────────────────────────────────────────
+#  PII Detection Tests 
 
 class TestPIIDetection:
     def test_email_detection(self):
@@ -103,7 +103,7 @@ class TestPIIDetection:
         assert check_pii("") == []
 
 
-# ── Anomaly Detection Tests ────────────────────────────────────────────
+#  Anomaly Detection Tests 
 
 class TestAnomalyDetection:
     def test_normal_span_no_anomaly(self):

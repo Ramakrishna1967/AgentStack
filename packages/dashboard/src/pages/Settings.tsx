@@ -107,7 +107,7 @@ const Settings: React.FC = () => {
         {/* API key reveal */}
         {newApiKey && (
           <div style={{ marginTop: 16, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 6, padding: 14 }}>
-            <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginBottom: 8 }}>✓ Project created! Save this API key — it won't be shown again</div>
+            <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginBottom: 8 }}> Project created! Save this API key  it won't be shown again</div>
             <div style={{ display: "flex", gap: 8 }}>
               <code style={{ flex: 1, fontSize: 12, fontFamily: "monospace", color: "#ccc", background: "#000", padding: "8px 12px", borderRadius: 4, wordBreak: "break-all", border: "1px solid #222" }}>
                 {newApiKey}
@@ -115,7 +115,7 @@ const Settings: React.FC = () => {
               <button
                 onClick={() => handleCopy(newApiKey, "new")}
                 style={{ background: "#222", border: "1px solid #333", borderRadius: 4, color: "#ccc", padding: "8px 12px", fontSize: 12, cursor: "pointer" }}
-              >{copiedId === "new" ? "✓ Copied" : "Copy"}</button>
+              >{copiedId === "new" ? " Copied" : "Copy"}</button>
             </div>
           </div>
         )}

@@ -1,13 +1,13 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""BatchSpanProcessor — collects spans and exports them in batches.
+"""BatchSpanProcessor  collects spans and exports them in batches.
 
 Runs a background daemon thread that periodically flushes accumulated spans
 to the Collector via HTTP. If the Collector is unreachable, spans are saved
 to the local SQLite store for later replay.
 
-The processor is completely non-blocking — span.end() returns immediately
+The processor is completely non-blocking  span.end() returns immediately
 after queuing the span. An atexit hook ensures remaining spans are flushed
 on process shutdown.
 
@@ -183,7 +183,7 @@ class BatchSpanProcessor:
                 )
                 return
             else:
-                logger.debug("Transport failed: %s — falling back to local store", result.error)
+                logger.debug("Transport failed: %s  falling back to local store", result.error)
                 self._failed_count += len(export_dicts)
 
         # Fallback: save to local SQLite
@@ -269,7 +269,7 @@ class BatchSpanProcessor:
         )
 
 
-# ── Module-level singleton ────────────────────────────────────────────
+#  Module-level singleton 
 
 _processor: BatchSpanProcessor | None = None
 _processor_lock = threading.Lock()

@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Project routes — CRUD operations and API key management.
+"""Project routes  CRUD operations and API key management.
 
 HIGH-5 FIX: All queries are now scoped to the current user via
 the user_projects join table. Users can only see/manage their own projects.

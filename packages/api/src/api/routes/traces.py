@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Trace routes — list traces, get trace detail with full span tree."""
+"""Trace routes  list traces, get trace detail with full span tree."""
 
 from __future__ import annotations
 
@@ -99,7 +99,7 @@ async def list_traces(
             "project_id": row["project_id"],
             "start_time": start_ns,
             "end_time": end_ns,
-            "duration_ms": (end_ns - start_ns) / 1e6,
+            "duration_ms": int((end_ns - start_ns) / 1e6),
             "status": row["status"],
             "span_count": row["span_count"],
         })
@@ -147,7 +147,7 @@ async def get_trace_detail(
                 name=row["name"],
                 start_time=start_ns,
                 end_time=end_ns,
-                duration_ms=row["duration_ms"],
+                duration_ms=int(row["duration_ms"]),
                 status=SpanStatus(row["status"]),
                 service_name=row["service_name"] or "default",
                 attributes=row["attributes"],
@@ -161,7 +161,7 @@ async def get_trace_detail(
         project_id=span_rows[0]["project_id"],
         start_time=min_start,
         end_time=max_end,
-        duration_ms=(max_end - min_start) / 1e6 if min_start and max_end else 0,
+        duration_ms=int((max_end - min_start) / 1e6) if min_start and max_end else 0,
         status=final_status,
         spans=spans,
     )

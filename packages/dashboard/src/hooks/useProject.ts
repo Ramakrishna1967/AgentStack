@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * useProject hook — project CRUD operations via TanStack Query
+ * useProject hook  project CRUD operations via TanStack Query
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

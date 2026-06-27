@@ -5,7 +5,7 @@
 
 The buffer holds spans in memory until the BatchSpanProcessor flushes them.
 When the buffer is full (capacity reached), the oldest spans are silently
-dropped — this prevents unbounded memory growth under high load.
+dropped  this prevents unbounded memory growth under high load.
 
 Thread safety is provided via a threading.Lock wrapping all mutations.
 """
@@ -23,7 +23,7 @@ class RingBuffer(Generic[T]):
     """Fixed-capacity, thread-safe ring buffer using collections.deque.
 
     When the buffer is at capacity, new items silently overwrite the oldest.
-    This is the desired behavior for observability — we'd rather lose old
+    This is the desired behavior for observability  we'd rather lose old
     spans than crash or block the user's application.
 
     Args:

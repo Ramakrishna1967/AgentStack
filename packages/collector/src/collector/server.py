@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Collector server — trace ingestion endpoint."""
+"""Collector server  trace ingestion endpoint."""
 
 from __future__ import annotations
 

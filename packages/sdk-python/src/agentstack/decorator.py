@@ -1,11 +1,11 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""@observe decorator — the primary developer-facing API of AgentStack.
+"""@observe decorator  the primary developer-facing API of AgentStack.
 
 Wraps sync and async functions to automatically create spans that capture
 function arguments, return values, exceptions, and timing. The decorator
-is designed to be completely transparent — it NEVER crashes the user's
+is designed to be completely transparent  it NEVER crashes the user's
 application, even if the SDK itself encounters an internal error.
 
 Usage:
@@ -204,7 +204,7 @@ def _wrap_async(
     return wrapper
 
 
-# ── Public API ─────────────────────────────────────────────────────────
+#  Public API 
 
 
 @overload

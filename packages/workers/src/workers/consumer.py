@@ -110,7 +110,7 @@ class BaseConsumer(ABC):
                 logger.info("Consumer group %s already exists", self.group_name)
             else:
                 logger.error("Fatal error creating consumer group %s: %s", self.group_name, e)
-                raise  # HIGH-6 FIX: fail fast — don't run a broken worker
+                raise  # HIGH-6 FIX: fail fast  don't run a broken worker
 
         # Setup signal handlers (graceful shutdown)
         # Note: In some environments (like Windows), signals might need different handling or run via uvicorn's lifespan

@@ -1,4 +1,4 @@
-# AgentStack SDK — CI/CD Pipeline
+# AgentStack SDK  CI/CD Pipeline
 name: CI
 
 on:
