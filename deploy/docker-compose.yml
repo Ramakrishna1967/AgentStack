@@ -5,12 +5,15 @@ services:
   redis:
     image: redis:7-alpine
     container_name: agentstack-redis
-    command: redis-server /usr/local/etc/redis/redis.conf
+    entrypoint: ["/bin/sh", "/usr/local/etc/redis/docker-entrypoint.sh"]
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/docker-entrypoint.sh:/usr/local/etc/redis/docker-entrypoint.sh
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
@@ -28,12 +31,18 @@ services:
       - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
       - clickhouse_data:/var/lib/clickhouse
     ports:
-      - "8123:8123" # HTTP
-      - "9000:9000" # Native
+      - "127.0.0.1:8123:8123" # HTTP
+      - "127.0.0.1:9000:9000" # Native
     environment:
       CLICKHOUSE_DB: ${CLICKHOUSE_DB:-default}
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     ulimits:
       nofile:
         soft: 262144
@@ -51,8 +60,10 @@ services:
     container_name: agentstack-api
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000
     depends_on:
-      - redis
-      - clickhouse
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
@@ -77,8 +88,10 @@ services:
     container_name: agentstack-collector
     command: uvicorn collector.server:app --host 0.0.0.0 --port 4318
     depends_on:
-      - redis
-      - api
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
@@ -100,13 +113,21 @@ services:
     container_name: agentstack-worker-writer
     command: python -m workers.clickhouse_writer
     depends_on:
-      - redis
-      - clickhouse
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -119,13 +140,21 @@ services:
     container_name: agentstack-worker-security
     command: python -m workers.security_engine
     depends_on:
-      - redis
-      - clickhouse
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -138,13 +167,21 @@ services:
     container_name: agentstack-worker-cost
     command: python -m workers.cost_calculator
     depends_on:
-      - redis
-      - clickhouse
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:

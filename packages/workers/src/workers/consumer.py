@@ -159,7 +159,12 @@ class BaseConsumer(ABC):
                             # Dead Letter Queue implementation
                             try:
                                 dlq_stream = f"{self.stream_key}:dlq"
-                                await self.redis.xadd(dlq_stream, data)
+                                dlq_data = {
+                                    **data,
+                                    b"__error__": str(process_e).encode(),
+                                    b"__consumer__": self.consumer_name.encode(),
+                                }
+                                await self.redis.xadd(dlq_stream, dlq_data, maxlen=100_000, approximate=True)
                                 self._messages_dlq += 1
                                 logger.info("Message %s routed to DLQ %s", message_id, dlq_stream)
                             except Exception as dlq_e:

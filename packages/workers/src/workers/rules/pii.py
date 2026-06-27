@@ -84,7 +84,19 @@ PATTERNS: dict[str, tuple[re.Pattern, Callable[[re.Match], bool] | None]] = {
     ),
     "OPENAI_KEY": (
         re.compile(r"\bsk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{24}\b"),
-        None,  # Updated to match actual OpenAI key format (sk-...T3BlbkFJ...)
+        None,
+    ),
+    "OPENAI_KEY_V2": (
+        re.compile(r"\bsk-(?:proj|svcacct|None)-[A-Za-z0-9_-]{40,}\b"),
+        None,  # Current OpenAI project/service-account key format
+    ),
+    "ANTHROPIC_KEY": (
+        re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b"),
+        None,  # Anthropic API key (sk-ant-api03-...)
+    ),
+    "HUGGINGFACE_TOKEN": (
+        re.compile(r"\bhf_[A-Za-z0-9]{34}\b"),
+        None,  # HuggingFace access token
     ),
     "GCP_KEY": (
         re.compile(r"\bAIzaSy[a-zA-Z0-9_-]{33}\b"),

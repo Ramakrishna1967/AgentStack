@@ -58,7 +58,7 @@ async def get_current_user(
         row = await cursor.fetchone()
 
     if row is None:
-        return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     user = dict(row)
     return user
@@ -67,5 +67,7 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: dict = Depends(get_current_user),
 ) -> dict:
-    """Get current active user (already verified by get_current_user)."""
+    """Get current active user."""
+    if not current_user.get("is_active", True):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user

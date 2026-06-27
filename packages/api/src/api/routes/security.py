@@ -7,9 +7,11 @@ from __future__ import annotations
 
 import json
 import aiosqlite
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from api.db import get_db
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
+from api.dependencies import get_current_active_user
 from api.schemas import SecurityAlertSchema, SecurityAlertSeverity
 
 router = APIRouter()
@@ -21,6 +23,8 @@ async def list_security_alerts(
     severity: SecurityAlertSeverity | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     ch: ClickHouseClient = Depends(get_clickhouse),
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """List security alerts with optional filters.
 
@@ -31,8 +35,24 @@ async def list_security_alerts(
     params = {}
 
     if project_id:
+        async with db.execute(
+            "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+            (current_user["id"], project_id),
+        ) as cursor:
+            if not await cursor.fetchone():
+                raise HTTPException(status_code=403, detail="Project not found")
         filters.append("project_id = {project_id:String}")
         params["project_id"] = project_id
+    else:
+        async with db.execute(
+            "SELECT project_id FROM user_projects WHERE user_id = ?",
+            (current_user["id"],),
+        ) as cursor:
+            owned_ids = [row[0] for row in await cursor.fetchall()]
+        if not owned_ids:
+            return []
+        placeholders = ", ".join(f"'{pid}'" for pid in owned_ids)
+        filters.append(f"project_id IN ({placeholders})")
 
     if severity:
         filters.append("severity = {severity:String}")

@@ -55,3 +55,8 @@ Thumbs.db
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# ── Deploy secrets ────────────────────────────────────────────────────
+deploy/.env
+.obsidian/
+2026-05-17.md

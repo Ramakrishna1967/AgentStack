@@ -20,13 +20,27 @@ logger = logging.getLogger(__name__)
 # Simple Pricing Catalog (USD per 1K tokens)
 # In production, this should be fetched from an API or DB
 PRICING = {
-    "gpt-4": {"input": 0.03, "output": 0.06},
-    "gpt-4-turbo": {"input": 0.01, "output": 0.03},
+    # OpenAI
+    "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
     "gpt-4o": {"input": 0.005, "output": 0.015},
+    "gpt-4-turbo": {"input": 0.01, "output": 0.03},
+    "gpt-4": {"input": 0.03, "output": 0.06},
     "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
+    "text-embedding-3-small": {"input": 0.00002, "output": 0.0},
+    "text-embedding-3-large": {"input": 0.00013, "output": 0.0},
+    # Anthropic
+    "claude-opus-4": {"input": 0.015, "output": 0.075},
+    "claude-sonnet-4": {"input": 0.003, "output": 0.015},
+    "claude-haiku-4": {"input": 0.0008, "output": 0.004},
+    "claude-3-5-sonnet": {"input": 0.003, "output": 0.015},
+    "claude-3-5-haiku": {"input": 0.0008, "output": 0.004},
     "claude-3-opus": {"input": 0.015, "output": 0.075},
     "claude-3-sonnet": {"input": 0.003, "output": 0.015},
     "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
+    # Google
+    "gemini-2.0-flash": {"input": 0.0001, "output": 0.0004},
+    "gemini-1.5-pro": {"input": 0.00125, "output": 0.005},
+    "gemini-1.5-flash": {"input": 0.000075, "output": 0.0003},
 }
 
 class CostCalculator(BaseConsumer):

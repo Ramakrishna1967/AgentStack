@@ -29,7 +29,7 @@ class RedisWriter:
             # Test connection
             try:
                 await self.redis.ping()
-                logger.info(f"Connected to Redis at {self.redis_url}")
+                logger.info("Connected to Redis at %s", self.redis_url.split("@")[-1])
             except Exception as e:
                 logger.error(f"Failed to connect to Redis: {e}")
                 raise

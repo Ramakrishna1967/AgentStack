@@ -179,7 +179,7 @@ class SecurityEngine(BaseConsumer):
                 "created_at": str(timestamp),
             }
             # Add to alerts stream
-            await self.redis.xadd(self.alerts_stream, notification)
+            await self.redis.xadd(self.alerts_stream, notification, maxlen=10_000, approximate=True)
             
         if rows:
             if not self.ch_client:

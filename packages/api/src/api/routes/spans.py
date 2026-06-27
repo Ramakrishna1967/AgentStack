@@ -9,6 +9,7 @@ import json
 import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException
 
+from api.db import get_db
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
 from api.dependencies import get_current_active_user
 from api.schemas import SpanSchema, SpanStatus
@@ -20,6 +21,8 @@ router = APIRouter()
 async def get_span_detail(
     span_id: str,
     ch: ClickHouseClient = Depends(get_clickhouse),
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Get individual span detail by ID from ClickHouse."""
     query = "SELECT * FROM spans WHERE span_id = {span_id:String}"
@@ -29,6 +32,13 @@ async def get_span_detail(
         raise HTTPException(status_code=404, detail="Span not found")
 
     row = rows[0]
+
+    async with db.execute(
+        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+        (current_user["id"], row["project_id"]),
+    ) as cursor:
+        if not await cursor.fetchone():
+            raise HTTPException(status_code=403, detail="Span not found")
 
     return SpanSchema(
         span_id=row["span_id"],

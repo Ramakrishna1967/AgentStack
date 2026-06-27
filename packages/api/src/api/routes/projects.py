@@ -82,14 +82,18 @@ async def create_project(
 @router.get("/projects", response_model=list[ProjectSchema])
 async def list_projects(
     db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
-    """List all projects for the demo."""
+    """List projects owned by current user."""
     async with db.execute(
         """
-        SELECT id, name, created_at, updated_at
-        FROM projects
-        ORDER BY created_at DESC
-        """
+        SELECT p.id, p.name, p.created_at, p.updated_at
+        FROM projects p
+        JOIN user_projects up ON up.project_id = p.id
+        WHERE up.user_id = ?
+        ORDER BY p.created_at DESC
+        """,
+        (current_user["id"],),
     ) as cursor:
         rows = await cursor.fetchall()
 
@@ -108,15 +112,17 @@ async def list_projects(
 async def get_project(
     project_id: str,
     db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
-    """Get project by ID."""
+    """Get project by ID (must be owned by current user)."""
     async with db.execute(
         """
-        SELECT id, name, created_at, updated_at
-        FROM projects
-        WHERE id = ?
+        SELECT p.id, p.name, p.created_at, p.updated_at
+        FROM projects p
+        JOIN user_projects up ON up.project_id = p.id
+        WHERE p.id = ? AND up.user_id = ?
         """,
-        (project_id,),
+        (project_id, current_user["id"]),
     ) as cursor:
         row = await cursor.fetchone()
 

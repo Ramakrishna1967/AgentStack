@@ -69,7 +69,7 @@ class ClickHouseWriter(BaseConsumer):
 
         # Connect to Redis directly
         from redis.asyncio import Redis
-        logger.info(f"Connecting to Redis at {self.redis_url}...")
+        logger.info("Connecting to Redis at %s...", self.redis_url.split("@")[-1])
         self.redis = Redis.from_url(self.redis_url, decode_responses=False)
         self.running = True
 
@@ -117,8 +117,14 @@ class ClickHouseWriter(BaseConsumer):
         await self.cleanup()
 
 
+    MAX_BUFFER_SIZE = 50_000
+
     async def process_message(self, message_id: bytes, data: Dict[bytes, bytes]):
         """Accumulate messages in buffer."""
+        if len(self.buffer) >= self.MAX_BUFFER_SIZE:
+            logger.error("Buffer full (%d entries), dropping span — ClickHouse may be down", self.MAX_BUFFER_SIZE)
+            await self.redis.xack(self.stream_key, self.group_name, message_id)
+            return
         try:
             if b"data" in data:
                 payload = self.decode_msgpack(data[b"data"])

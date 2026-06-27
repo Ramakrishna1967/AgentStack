@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import time
 import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List
@@ -27,11 +28,31 @@ async def list_traces(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     ch: ClickHouseClient = Depends(get_clickhouse),
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """List traces with pagination and filters by querying ClickHouse spans."""
     # Build query
     filters = []
     params = {}
+
+    if project_id:
+        async with db.execute(
+            "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+            (current_user["id"], project_id),
+        ) as cursor:
+            if not await cursor.fetchone():
+                raise HTTPException(status_code=403, detail="Project not found")
+    else:
+        async with db.execute(
+            "SELECT project_id FROM user_projects WHERE user_id = ?",
+            (current_user["id"],),
+        ) as cursor:
+            owned_ids = [row[0] for row in await cursor.fetchall()]
+        if not owned_ids:
+            return {"items": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 0}
+        placeholders = ", ".join(f"'{pid}'" for pid in owned_ids)
+        filters.append(f"project_id IN ({placeholders})")
 
     if project_id:
         filters.append("project_id = {project_id:String}")
@@ -117,6 +138,8 @@ async def list_traces(
 async def get_trace_detail(
     trace_id: str,
     ch: ClickHouseClient = Depends(get_clickhouse),
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Get full trace detail with all spans from ClickHouse."""
     # Fetch all spans for trace
@@ -125,6 +148,14 @@ async def get_trace_detail(
 
     if not span_rows:
         raise HTTPException(status_code=404, detail="Trace not found")
+
+    trace_project_id = span_rows[0]["project_id"]
+    async with db.execute(
+        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+        (current_user["id"], trace_project_id),
+    ) as cursor:
+        if not await cursor.fetchone():
+            raise HTTPException(status_code=403, detail="Trace not found")
 
     spans = []
     min_start = None
@@ -169,39 +200,40 @@ async def get_trace_detail(
 @router.get("/traces/{trace_id}/replay", response_model=List[SpanSchema])
 async def get_trace_replay(
     trace_id: str,
+    ch: ClickHouseClient = Depends(get_clickhouse),
     db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Get ordered spans for a trace to support Time Machine replay."""
-    # Fetch all spans for the trace ordered precisely by start_time
-    async with db.execute(
-        """
-        SELECT span_id, trace_id, parent_span_id, project_id, name, start_time, end_time,
-               duration_ms, status, service_name, attributes, events
-        FROM spans
-        WHERE trace_id = ?
-        ORDER BY start_time ASC
-        """,
-        (trace_id,),
-    ) as cursor:
-        span_rows = await cursor.fetchall()
-        
+    query = "SELECT * FROM spans WHERE trace_id = {trace_id:String} ORDER BY start_time ASC"
+    span_rows = await ch.execute(query, {"trace_id": trace_id})
+
     if not span_rows:
         raise HTTPException(status_code=404, detail="Trace not found or contains no spans")
 
+    trace_project_id = span_rows[0]["project_id"]
+    async with db.execute(
+        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+        (current_user["id"], trace_project_id),
+    ) as cursor:
+        if not await cursor.fetchone():
+            raise HTTPException(status_code=403, detail="Trace not found")
+
     spans = []
     for row in span_rows:
-        # Parse JSON fields
-        attributes = json.loads(row["attributes"]) if row["attributes"] else {}
+        start_ns = int(row["start_time"].timestamp() * 1e9)
+        end_ns = int(row["end_time"].timestamp() * 1e9)
+        attributes = row["attributes"] if isinstance(row["attributes"], dict) else {}
         events = json.loads(row["events"]) if row["events"] else []
 
         spans.append(
             SpanSchema(
                 span_id=row["span_id"],
                 trace_id=row["trace_id"],
-                parent_span_id=row["parent_span_id"],
+                parent_span_id=row["parent_span_id"] or None,
                 name=row["name"],
-                start_time=row["start_time"],
-                end_time=row["end_time"],
+                start_time=start_ns,
+                end_time=end_ns,
                 duration_ms=row["duration_ms"],
                 status=SpanStatus(row["status"]),
                 service_name=row["service_name"] or "default",

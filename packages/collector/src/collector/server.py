@@ -5,12 +5,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import sys
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Callable
 
 import aiosqlite
 from fastapi import FastAPI, Request, Depends, Header, HTTPException, BackgroundTasks
@@ -29,8 +33,27 @@ from collector.validators import (
 
 logger = logging.getLogger("agentstack.collector")
 
-# --- Security: Max payload size (5MB) ---
+# --- Rate limiting (100 req/min per IP) ---
+_rl_store: dict[str, list[float]] = defaultdict(list)
+_rl_lock = asyncio.Lock()
+_RL_MAX = 100
+_RL_WINDOW = 60
+
+
+async def _rate_limit_middleware(request: Request, call_next: Callable):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    async with _rl_lock:
+        _rl_store[client_ip] = [t for t in _rl_store[client_ip] if now - t < _RL_WINDOW]
+        if len(_rl_store[client_ip]) >= _RL_MAX:
+            return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+        _rl_store[client_ip].append(now)
+    return await call_next(request)
+
+
+# --- Security: Max payload size (5MB compressed, 50MB decompressed) ---
 MAX_PAYLOAD_BYTES = 5 * 1024 * 1024
+MAX_DECOMPRESSED_BYTES = 50 * 1024 * 1024
 
 
 @asynccontextmanager
@@ -72,6 +95,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-API-Key", "Content-Encoding"],
 )
 
+# Rate limiting
+app.middleware("http")(_rate_limit_middleware)
+
 # Include health routes
 app.include_router(health_router, tags=["system"])
 
@@ -99,10 +125,13 @@ async def ingest_traces(
     content_encoding = request.headers.get("Content-Encoding", "").lower()
     if content_encoding == "gzip":
         try:
-            import gzip
-            body_bytes = gzip.decompress(body_bytes)
+            import gzip, io
+            with gzip.GzipFile(fileobj=io.BytesIO(body_bytes)) as gz:
+                body_bytes = gz.read(MAX_DECOMPRESSED_BYTES + 1)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid gzip payload")
+        if len(body_bytes) > MAX_DECOMPRESSED_BYTES:
+            raise HTTPException(status_code=413, detail="Decompressed payload too large (max 50MB)")
 
     # Verify API key and get project_id
     project_id = await verify_api_key(x_api_key=x_api_key, db=db)
@@ -127,22 +156,7 @@ async def ingest_traces(
             logger.warning("Invalid span dropped: %s", e)
             continue
 
-        # Enrich with project_id
-        # --- AUTO-DISCOVERY: If trace has a custom project_id, try to use it ---
-        trace_project_id = span_data.get("project_id") or project_id
-        span_data["project_id"] = trace_project_id
-
-        # Async: Ensure project exists in SQLite so it shows in Dashboard
-        try:
-            # Check if this project is already known to the cache or DB
-            # We'll do a simple 'INSERT OR IGNORE' to keep it fast
-            await db.execute(
-                "INSERT OR IGNORE INTO projects (id, name, api_key_hash) VALUES (?, ?, ?)",
-                (trace_project_id, trace_project_id.replace('-', ' ').title(), x_api_key)
-            )
-            await db.commit()
-        except Exception as e:
-            logger.debug("Optional project auto-create failed: %s", e)
+        span_data["project_id"] = project_id
 
         # Async write to Redis
         await redis_writer.add_span(span_data)

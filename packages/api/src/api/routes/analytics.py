@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+import aiosqlite
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Literal
 
+from api.db import get_db
 from api.dependencies import get_current_active_user
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
 
@@ -21,6 +23,8 @@ async def get_cost_timeseries(
     start_date: int | None = Query(None, description="Unix timestamp in seconds"),
     end_date: int | None = Query(None, description="Unix timestamp in seconds"),
     ch: ClickHouseClient = Depends(get_clickhouse),
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Get cost metrics over time from ClickHouse.
 
@@ -30,8 +34,25 @@ async def get_cost_timeseries(
     params = []
 
     if project_id:
+        async with db.execute(
+            "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+            (current_user["id"], project_id),
+        ) as cursor:
+            if not await cursor.fetchone():
+                raise HTTPException(status_code=403, detail="Project not found")
         where_clauses.append("project_id = %s")
         params.append(project_id)
+    else:
+        async with db.execute(
+            "SELECT project_id FROM user_projects WHERE user_id = ?",
+            (current_user["id"],),
+        ) as cursor:
+            owned_ids = [row[0] for row in await cursor.fetchall()]
+        if not owned_ids:
+            return {"interval": interval, "project_id": None, "data": []}
+        placeholders = ", ".join(["%s"] * len(owned_ids))
+        where_clauses.append(f"project_id IN ({placeholders})")
+        params.extend(owned_ids)
 
     if start_date:
         where_clauses.append("timestamp >= toDateTime(%s)")
