@@ -87,7 +87,7 @@ PATTERNS: dict[str, tuple[re.Pattern, Callable[[re.Match], bool] | None]] = {
         None,
     ),
     "OPENAI_KEY_V2": (
-        re.compile(r"\bsk-(?:proj|svcacct|None)-[A-Za-z0-9_-]{40,}\b"),
+        re.compile(r"\bsk-(?:proj|svcacct)-[A-Za-z0-9_-]{40,}\b"),
         None,  # Current OpenAI project/service-account key format
     ),
     "ANTHROPIC_KEY": (

@@ -122,7 +122,14 @@ class ClickHouseWriter(BaseConsumer):
     async def process_message(self, message_id: bytes, data: Dict[bytes, bytes]):
         """Accumulate messages in buffer."""
         if len(self.buffer) >= self.MAX_BUFFER_SIZE:
-            logger.error("Buffer full (%d entries), dropping span — ClickHouse may be down", self.MAX_BUFFER_SIZE)
+            logger.error("Buffer full (%d entries), routing to DLQ — ClickHouse may be down", self.MAX_BUFFER_SIZE)
+            dlq_stream = f"{self.stream_key}:dlq"
+            dlq_data = {
+                **data,
+                b"__error__": b"buffer_full",
+                b"__consumer__": self.consumer_name.encode(),
+            }
+            await self.redis.xadd(dlq_stream, dlq_data, maxlen=100_000, approximate=True)
             await self.redis.xack(self.stream_key, self.group_name, message_id)
             return
         try:

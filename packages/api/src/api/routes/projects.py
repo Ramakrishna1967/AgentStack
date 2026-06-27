@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from passlib.hash import pbkdf2_sha256 as pwd_context
 
 from api.db import get_db
-from api.dependencies import get_current_active_user
+from api.dependencies import get_current_active_user, verify_project_ownership
 from api.schemas import ProjectSchema, ProjectCreateRequest, ProjectCreateResponse
 
 router = APIRouter()
@@ -145,12 +145,8 @@ async def delete_project(
 ):
     """Delete a project (only if owned by current user, cascades to traces/spans)."""
     # HIGH-5 FIX: Verify ownership before deletion
-    async with db.execute(
-        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-        (current_user["id"], project_id),
-    ) as cursor:
-        if not await cursor.fetchone():
-            raise HTTPException(status_code=404, detail="Project not found")
+    if not await verify_project_ownership(db, current_user["id"], project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
 
     await db.execute("DELETE FROM projects WHERE id = ?", (project_id,))
     await db.commit()

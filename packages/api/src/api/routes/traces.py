@@ -13,7 +13,7 @@ from typing import List
 
 from api.db import get_db
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
-from api.dependencies import get_current_active_user
+from api.dependencies import get_current_active_user, get_user_project_ids, verify_project_ownership
 from api.schemas import TraceSchema, TraceDetailSchema, SpanSchema, SpanStatus
 
 router = APIRouter()
@@ -37,22 +37,14 @@ async def list_traces(
     params = {}
 
     if project_id:
-        async with db.execute(
-            "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-            (current_user["id"], project_id),
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=403, detail="Project not found")
+        if not await verify_project_ownership(db, current_user["id"], project_id):
+            raise HTTPException(status_code=403, detail="Project not found")
     else:
-        async with db.execute(
-            "SELECT project_id FROM user_projects WHERE user_id = ?",
-            (current_user["id"],),
-        ) as cursor:
-            owned_ids = [row[0] for row in await cursor.fetchall()]
+        owned_ids = await get_user_project_ids(db, current_user["id"])
         if not owned_ids:
             return {"items": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 0}
-        placeholders = ", ".join(f"'{pid}'" for pid in owned_ids)
-        filters.append(f"project_id IN ({placeholders})")
+        filters.append("project_id IN {owned_ids:Array(String)}")
+        params["owned_ids"] = owned_ids
 
     if project_id:
         filters.append("project_id = {project_id:String}")
@@ -150,12 +142,8 @@ async def get_trace_detail(
         raise HTTPException(status_code=404, detail="Trace not found")
 
     trace_project_id = span_rows[0]["project_id"]
-    async with db.execute(
-        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-        (current_user["id"], trace_project_id),
-    ) as cursor:
-        if not await cursor.fetchone():
-            raise HTTPException(status_code=403, detail="Trace not found")
+    if not await verify_project_ownership(db, current_user["id"], trace_project_id):
+        raise HTTPException(status_code=403, detail="Trace not found")
 
     spans = []
     min_start = None
@@ -163,9 +151,15 @@ async def get_trace_detail(
     final_status = SpanStatus.OK
 
     for row in span_rows:
-        start_ns = int(row["start_time"].timestamp() * 1e9)
-        end_ns = int(row["end_time"].timestamp() * 1e9)
-        
+        try:
+            start_ns = int(row["start_time"].timestamp() * 1e9)
+        except (ValueError, OverflowError, AttributeError):
+            start_ns = 0
+        try:
+            end_ns = int(row["end_time"].timestamp() * 1e9)
+        except (ValueError, OverflowError, AttributeError):
+            end_ns = start_ns + 1_000_000
+
         if min_start is None or start_ns < min_start: min_start = start_ns
         if max_end is None or end_ns > max_end: max_end = end_ns
         if row["status"] == "ERROR": final_status = SpanStatus.ERROR
@@ -212,12 +206,8 @@ async def get_trace_replay(
         raise HTTPException(status_code=404, detail="Trace not found or contains no spans")
 
     trace_project_id = span_rows[0]["project_id"]
-    async with db.execute(
-        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-        (current_user["id"], trace_project_id),
-    ) as cursor:
-        if not await cursor.fetchone():
-            raise HTTPException(status_code=403, detail="Trace not found")
+    if not await verify_project_ownership(db, current_user["id"], trace_project_id):
+        raise HTTPException(status_code=403, detail="Trace not found")
 
     spans = []
     for row in span_rows:

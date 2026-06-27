@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Literal
 
 from api.db import get_db
-from api.dependencies import get_current_active_user
+from api.dependencies import get_current_active_user, get_user_project_ids, verify_project_ownership
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
 
 router = APIRouter()
@@ -34,20 +34,12 @@ async def get_cost_timeseries(
     params = []
 
     if project_id:
-        async with db.execute(
-            "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-            (current_user["id"], project_id),
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=403, detail="Project not found")
+        if not await verify_project_ownership(db, current_user["id"], project_id):
+            raise HTTPException(status_code=403, detail="Project not found")
         where_clauses.append("project_id = %s")
         params.append(project_id)
     else:
-        async with db.execute(
-            "SELECT project_id FROM user_projects WHERE user_id = ?",
-            (current_user["id"],),
-        ) as cursor:
-            owned_ids = [row[0] for row in await cursor.fetchall()]
+        owned_ids = await get_user_project_ids(db, current_user["id"])
         if not owned_ids:
             return {"interval": interval, "project_id": None, "data": []}
         placeholders = ", ".join(["%s"] * len(owned_ids))

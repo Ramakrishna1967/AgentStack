@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.db import get_db
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
-from api.dependencies import get_current_active_user
+from api.dependencies import get_current_active_user, get_user_project_ids, verify_project_ownership
 from api.schemas import SecurityAlertSchema, SecurityAlertSeverity
 
 router = APIRouter()
@@ -35,24 +35,16 @@ async def list_security_alerts(
     params = {}
 
     if project_id:
-        async with db.execute(
-            "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-            (current_user["id"], project_id),
-        ) as cursor:
-            if not await cursor.fetchone():
-                raise HTTPException(status_code=403, detail="Project not found")
+        if not await verify_project_ownership(db, current_user["id"], project_id):
+            raise HTTPException(status_code=403, detail="Project not found")
         filters.append("project_id = {project_id:String}")
         params["project_id"] = project_id
     else:
-        async with db.execute(
-            "SELECT project_id FROM user_projects WHERE user_id = ?",
-            (current_user["id"],),
-        ) as cursor:
-            owned_ids = [row[0] for row in await cursor.fetchall()]
+        owned_ids = await get_user_project_ids(db, current_user["id"])
         if not owned_ids:
             return []
-        placeholders = ", ".join(f"'{pid}'" for pid in owned_ids)
-        filters.append(f"project_id IN ({placeholders})")
+        filters.append("project_id IN {owned_ids:Array(String)}")
+        params["owned_ids"] = owned_ids
 
     if severity:
         filters.append("severity = {severity:String}")

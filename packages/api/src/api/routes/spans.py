@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from api.db import get_db
 from api.db_clickhouse import get_clickhouse, ClickHouseClient
-from api.dependencies import get_current_active_user
+from api.dependencies import get_current_active_user, verify_project_ownership
 from api.schemas import SpanSchema, SpanStatus
 
 router = APIRouter()
@@ -33,12 +33,8 @@ async def get_span_detail(
 
     row = rows[0]
 
-    async with db.execute(
-        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
-        (current_user["id"], row["project_id"]),
-    ) as cursor:
-        if not await cursor.fetchone():
-            raise HTTPException(status_code=403, detail="Span not found")
+    if not await verify_project_ownership(db, current_user["id"], row["project_id"]):
+        raise HTTPException(status_code=403, detail="Span not found")
 
     return SpanSchema(
         span_id=row["span_id"],

@@ -44,8 +44,8 @@ jobs:
 
     - name: Type check with mypy
       run: |
-        mypy packages/sdk-python/src --ignore-missing-imports --no-error-summary || true
-        mypy packages/api/src --ignore-missing-imports --no-error-summary || true
+        mypy packages/sdk-python/src --ignore-missing-imports --no-error-summary
+        mypy packages/api/src --ignore-missing-imports --no-error-summary
 
     - name: Test with pytest
       run: |

@@ -87,6 +87,9 @@ _allowed_origins = os.getenv(
     "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173"
 ).split(",")
 
+# Rate limiting — register before CORS so CORS is outermost and adds headers to 429s
+app.middleware("http")(_rate_limit_middleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _allowed_origins],
@@ -94,9 +97,6 @@ app.add_middleware(
     allow_methods=["POST", "GET"],
     allow_headers=["Content-Type", "X-API-Key", "Content-Encoding"],
 )
-
-# Rate limiting
-app.middleware("http")(_rate_limit_middleware)
 
 # Include health routes
 app.include_router(health_router, tags=["system"])

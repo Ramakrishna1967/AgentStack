@@ -71,3 +71,35 @@ async def get_current_active_user(
     if not current_user.get("is_active", True):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
+
+
+async def get_user_project_ids(
+    db: aiosqlite.Connection,
+    user_id: str,
+) -> list[str]:
+    """Return project IDs accessible to this user.
+
+    Demo user gets all projects so the dashboard works without auth setup.
+    """
+    if user_id == "demo":
+        async with db.execute("SELECT id FROM projects") as cursor:
+            return [row[0] for row in await cursor.fetchall()]
+    async with db.execute(
+        "SELECT project_id FROM user_projects WHERE user_id = ?", (user_id,)
+    ) as cursor:
+        return [row[0] for row in await cursor.fetchall()]
+
+
+async def verify_project_ownership(
+    db: aiosqlite.Connection,
+    user_id: str,
+    project_id: str,
+) -> bool:
+    """Return True if user owns the project. Demo user owns all."""
+    if user_id == "demo":
+        return True
+    async with db.execute(
+        "SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?",
+        (user_id, project_id),
+    ) as cursor:
+        return await cursor.fetchone() is not None
