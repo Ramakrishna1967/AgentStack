@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -17,6 +18,11 @@ from api.schemas import HealthResponse
 
 logger = logging.getLogger("agentstack.api")
 
+# In-process replacement for the old Redis "spans.ingest" stream. No consumer
+# reads this yet (cost/security/storage still untouched) — wiring a consumer
+# is a later retrofit step.
+SPAN_QUEUE_MAXSIZE = 10_000
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,7 +34,10 @@ async def lifespan(app: FastAPI):
     db = get_database()
     await db.init_db()
     logger.info("Database initialized successfully")
-    
+
+    # Ingestion pipeline (merged from the collector) — in-process queue, no Redis
+    app.state.span_queue = asyncio.Queue(maxsize=SPAN_QUEUE_MAXSIZE)
+
     # Start WS Consumer
     await ws.start_ws_consumer()
 
@@ -66,7 +75,7 @@ def create_app() -> FastAPI:
         }
 
     # Import and include routers
-    from api.routes import traces, spans, projects, security, analytics, auth, ws, health
+    from api.routes import traces, spans, projects, security, analytics, auth, ws, health, ingest
 
     app.include_router(traces.router, prefix="/api/v1", tags=["traces"])
     app.include_router(spans.router, prefix="/api/v1", tags=["spans"])
@@ -76,6 +85,9 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
     app.include_router(health.router, prefix="/api/v1", tags=["system"])
     app.include_router(ws.router, tags=["websocket"])
+    # No /api/v1 prefix — SDK talks to /v1/traces directly, same as the
+    # standalone collector did.
+    app.include_router(ingest.router, tags=["ingest"])
 
     return app
 
