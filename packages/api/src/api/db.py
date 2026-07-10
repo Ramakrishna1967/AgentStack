@@ -195,7 +195,10 @@ class Database:
                 ON spans(project_id, created_at DESC)
             """)
 
-            # Security alerts table
+            # Security alerts table — column named rule_name (not alert_type) to
+            # match deploy/clickhouse/init.sql and workers/security_engine.py,
+            # which is the actual write path. API layer aliases rule_name back
+            # to alert_type at query time to keep the external schema stable.
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS security_alerts (
                     id TEXT PRIMARY KEY,
@@ -203,7 +206,7 @@ class Database:
                     span_id TEXT NOT NULL,
                     project_id TEXT NOT NULL,
                     severity TEXT NOT NULL,
-                    alert_type TEXT NOT NULL,
+                    rule_name TEXT NOT NULL,
                     message TEXT NOT NULL,
                     metadata TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -214,6 +217,26 @@ class Database:
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_alerts_project
                 ON security_alerts(project_id, severity, created_at DESC)
+            """)
+
+            # Cost metrics table — mirrors deploy/clickhouse/init.sql's cost_metrics
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS cost_metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    span_kind TEXT,
+                    timestamp TIMESTAMP NOT NULL,
+                    prompt_tokens INTEGER NOT NULL DEFAULT 0,
+                    completion_tokens INTEGER NOT NULL DEFAULT 0,
+                    total_tokens INTEGER NOT NULL DEFAULT 0,
+                    cost_usd REAL NOT NULL DEFAULT 0,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_cost_metrics_project
+                ON cost_metrics(project_id, timestamp DESC)
             """)
 
 
