@@ -15,12 +15,12 @@ from fastapi.responses import JSONResponse
 from api.db import get_database
 from api.middleware import add_cors_middleware, rate_limit_middleware
 from api.schemas import HealthResponse
+from api.span_consumer import start_span_consumer, stop_span_consumer
 
 logger = logging.getLogger("agentstack.api")
 
-# In-process replacement for the old Redis "spans.ingest" stream. No consumer
-# reads this yet (cost/security/storage still untouched) — wiring a consumer
-# is a later retrofit step.
+# In-process replacement for the old Redis "spans.ingest" stream, drained by
+# span_consumer.py (cost calc, security rules, SQLite writes, WS broadcast).
 SPAN_QUEUE_MAXSIZE = 10_000
 
 
@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
 
     # Ingestion pipeline (merged from the collector) — in-process queue, no Redis
     app.state.span_queue = asyncio.Queue(maxsize=SPAN_QUEUE_MAXSIZE)
+    start_span_consumer(app)
 
     # Start WS Consumer
     await ws.start_ws_consumer()
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    await stop_span_consumer(app)
     await ws.stop_ws_consumer()
     logger.info("AgentStack API shutting down...")
 
