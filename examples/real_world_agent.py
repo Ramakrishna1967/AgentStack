@@ -17,7 +17,7 @@ if not GOOGLE_API_KEY:
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # AgentStack Configuration
-os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", "https://agentstack-collector:4318")
+os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", "http://localhost:8000")
 os.environ.setdefault("AGENTSTACK_API_KEY", os.environ.get("AGENTSTACK_API_KEY", ""))
 os.environ.setdefault("AGENTSTACK_PROJECT_ID", "real-world-test")
 

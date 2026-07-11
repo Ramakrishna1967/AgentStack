@@ -54,7 +54,7 @@ class AgentStackConfig:
     """
 
     api_key: str = ""
-    collector_url: str = "https://localhost:4318"
+    collector_url: str = "http://localhost:8000"
     enabled: bool = True
     batch_size: int = 64
     export_interval_ms: int = 5000
@@ -70,7 +70,7 @@ class AgentStackConfig:
 
         Environment Variables:
             AGENTSTACK_API_KEY: Required. API key for authentication.
-            AGENTSTACK_COLLECTOR_URL: Default "http://localhost:4318".
+            AGENTSTACK_COLLECTOR_URL: Default "http://localhost:8000".
             AGENTSTACK_ENABLED: Default "true". Set to "false" to disable.
             AGENTSTACK_BATCH_SIZE: Default 64. Max spans before flush.
             AGENTSTACK_EXPORT_INTERVAL: Default 5000. Milliseconds before flush.
@@ -82,7 +82,7 @@ class AgentStackConfig:
         """
         return cls(
             api_key=_env("AGENTSTACK_API_KEY", ""),
-            collector_url=_env("AGENTSTACK_COLLECTOR_URL", "http://localhost:4318"),
+            collector_url=_env("AGENTSTACK_COLLECTOR_URL", "http://localhost:8000"),
             enabled=_env_bool("AGENTSTACK_ENABLED", True),
             batch_size=_env_int("AGENTSTACK_BATCH_SIZE", 64),
             export_interval_ms=_env_int("AGENTSTACK_EXPORT_INTERVAL", 5000),

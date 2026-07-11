@@ -6,7 +6,7 @@ import random
 import json
 
 # Config
-COLLECTOR_URL = "http://localhost:4318/v1/traces"
+COLLECTOR_URL = "http://localhost:8000/v1/traces"
 
 PROJECTS = ["proj_alpha", "proj_beta", "proj_gamma"]
 MODELS = ["gpt-4", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet"]

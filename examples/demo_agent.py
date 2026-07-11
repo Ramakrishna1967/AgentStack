@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 # Point SDK collector to backend (use environment variables or HTTPS in production)
-os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", os.environ.get("AGENTSTACK_COLLECTOR_URL", "https://agentstack-collector:4318"))
+os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", os.environ.get("AGENTSTACK_COLLECTOR_URL", "http://localhost:8000"))
 os.environ.setdefault("AGENTSTACK_API_KEY", os.environ.get("AGENTSTACK_API_KEY", ""))
 os.environ.setdefault("AGENTSTACK_PROJECT_ID", "demo-simulation")
 

@@ -6,7 +6,7 @@ import os
 import sys
 
 # Ensure we use the correct collector URL
-os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://localhost:4318/v1/traces"
+os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://localhost:8000"
 os.environ["AGENTSTACK_API_KEY"] = "ak_demo123" # Mock API key
 
 # Ensure local sdk is found

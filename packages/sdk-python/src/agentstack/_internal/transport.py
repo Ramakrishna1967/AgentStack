@@ -65,7 +65,7 @@ class HttpTransport:
     Uses urllib (stdlib) with gzip compression and exponential backoff retry.
 
     Args:
-        collector_url: Base URL of the Collector (e.g., "http://localhost:4318").
+        collector_url: Base URL of the Collector (e.g., "http://localhost:8000").
         api_key: API key for X-API-Key authentication header.
         timeout_s: HTTP request timeout in seconds.
         max_retries: Maximum number of retry attempts on transient failures.
@@ -73,7 +73,7 @@ class HttpTransport:
 
     def __init__(
         self,
-        collector_url: str = "https://localhost:4318",
+        collector_url: str = "http://localhost:8000",
         api_key: str = "",
         timeout_s: float = _TIMEOUT_S,
         max_retries: int = _MAX_RETRIES,

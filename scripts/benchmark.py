@@ -19,7 +19,7 @@ import argparse
 import sys
 from statistics import mean
 
-COLLECTOR_URL = "http://localhost:4318/v1/traces"
+COLLECTOR_URL = "http://localhost:8000/v1/traces"
 API_KEY = "ak_demo123"  # Standard demo key used in DB seeding
 PAYLOAD_TEMPLATE = {
     "span_id": "",
