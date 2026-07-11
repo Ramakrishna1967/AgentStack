@@ -82,7 +82,7 @@ def create_app() -> FastAPI:
             "name": "AgentStack API",
             "version": "0.1.0-alpha",
             "docs": "/docs",
-            "health": "/health",
+            "health": "/api/v1/health",
         }
 
     # Import and include routers
