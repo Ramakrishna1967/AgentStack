@@ -6,7 +6,7 @@ services:
     build:
       context: ..
       dockerfile: packages/api/Dockerfile
-    container_name: agentstack-api
+    container_name: oxly-api
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////data/oxly.db

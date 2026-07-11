@@ -1,4 +1,4 @@
-name: AgentStack Release
+name: Oxly Release
 
 on:
   push:
@@ -57,7 +57,7 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: |
-          agentstack/api
+          oxly/api
 
     - name: Build and push API image
       uses: docker/build-push-action@v5
@@ -65,5 +65,5 @@ jobs:
         context: .
         file: ./packages/api/Dockerfile
         push: true
-        tags: agentstack/api:latest,agentstack/api:${{ github.ref_name }}
+        tags: oxly/api:latest,oxly/api:${{ github.ref_name }}
         labels: ${{ steps.meta.outputs.labels }}

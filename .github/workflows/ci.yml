@@ -1,4 +1,4 @@
-name: AgentStack CI
+name: Oxly CI
 
 on:
   push:
