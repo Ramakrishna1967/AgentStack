@@ -20,6 +20,7 @@ import logging
 import os
 import sqlite3
 import threading
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -59,26 +60,25 @@ class LocalStore:
     def _init_db(self) -> None:
         """Create the spans table if it doesn't exist."""
         try:
-            conn = self._get_conn()
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS spans (
-                    span_id TEXT PRIMARY KEY,
-                    trace_id TEXT NOT NULL,
-                    data TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    sent INTEGER DEFAULT 0
-                )
-            """)
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_spans_unsent
-                ON spans (sent) WHERE sent = 0
-            """)
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_spans_trace
-                ON spans (trace_id)
-            """)
-            conn.commit()
-            conn.close()
+            with closing(self._get_conn()) as conn:
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS spans (
+                        span_id TEXT PRIMARY KEY,
+                        trace_id TEXT NOT NULL,
+                        data TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        sent INTEGER DEFAULT 0
+                    )
+                """)
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_spans_unsent
+                    ON spans (sent) WHERE sent = 0
+                """)
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_spans_trace
+                    ON spans (trace_id)
+                """)
+                conn.commit()
         except Exception:
             logger.debug("Failed to initialize local store at %s", self._db_path, exc_info=True)
 
@@ -93,14 +93,12 @@ class LocalStore:
         """
         try:
             data = json.dumps(span.to_export_dict())
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 conn.execute(
                     "INSERT OR REPLACE INTO spans (span_id, trace_id, data, sent) VALUES (?, ?, ?, 0)",
                     (span.span_id, span.trace_id, data),
                 )
                 conn.commit()
-                conn.close()
             return True
         except Exception:
             logger.debug("Failed to save span %s to local store", span.span_id, exc_info=True)
@@ -122,14 +120,12 @@ class LocalStore:
                 (s.span_id, s.trace_id, json.dumps(s.to_export_dict()), 0)
                 for s in spans
             ]
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 conn.executemany(
                     "INSERT OR REPLACE INTO spans (span_id, trace_id, data, sent) VALUES (?, ?, ?, ?)",
                     rows,
                 )
                 conn.commit()
-                conn.close()
             return len(rows)
         except Exception:
             logger.debug("Failed to batch save spans to local store", exc_info=True)
@@ -145,14 +141,12 @@ class LocalStore:
             List of SpanModel objects ready for retry.
         """
         try:
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 cursor = conn.execute(
                     "SELECT span_id, data FROM spans WHERE sent = 0 ORDER BY created_at ASC LIMIT ?",
                     (limit,),
                 )
                 rows = cursor.fetchall()
-                conn.close()
 
             spans = []
             for span_id, data in rows:
@@ -179,15 +173,13 @@ class LocalStore:
             return 0
         try:
             placeholders = ",".join("?" for _ in span_ids)
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 cursor = conn.execute(
                     f"UPDATE spans SET sent = 1 WHERE span_id IN ({placeholders})",  # nosec B608
                     span_ids,
                 )
                 count = cursor.rowcount
                 conn.commit()
-                conn.close()
             return count
         except Exception:
             logger.debug("Failed to mark spans as sent", exc_info=True)
@@ -200,12 +192,10 @@ class LocalStore:
             Number of spans deleted.
         """
         try:
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 cursor = conn.execute("DELETE FROM spans WHERE sent = 1")
                 count = cursor.rowcount
                 conn.commit()
-                conn.close()
             return count
         except Exception:
             logger.debug("Failed to delete sent spans", exc_info=True)
@@ -221,13 +211,11 @@ class LocalStore:
             Number of spans exported.
         """
         try:
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 cursor = conn.execute(
                     "SELECT data FROM spans ORDER BY created_at ASC"
                 )
                 rows = cursor.fetchall()
-                conn.close()
 
             spans_data = [json.loads(row[0]) for row in rows]
             with open(path, "w", encoding="utf-8") as f:
@@ -241,11 +229,9 @@ class LocalStore:
     def unsent_count(self) -> int:
         """Number of unsent spans in the store."""
         try:
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 cursor = conn.execute("SELECT COUNT(*) FROM spans WHERE sent = 0")
                 count = cursor.fetchone()[0]
-                conn.close()
             return count
         except Exception:
             return 0
@@ -254,11 +240,9 @@ class LocalStore:
     def total_count(self) -> int:
         """Total number of spans in the store."""
         try:
-            with self._lock:
-                conn = self._get_conn()
+            with self._lock, closing(self._get_conn()) as conn:
                 cursor = conn.execute("SELECT COUNT(*) FROM spans")
                 count = cursor.fetchone()[0]
-                conn.close()
             return count
         except Exception:
             return 0
