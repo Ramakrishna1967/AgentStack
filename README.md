@@ -313,11 +313,11 @@ Without this, the API still works fully — you just won't have the dashboard UI
 ```bash
 curl -X POST http://localhost:8000/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com", "password": "a-strong-password-12+"}'
+  -d '{"email": "you@example.com", "password": "A-Strong-Password-12+"}'
 
 TOKEN=$(curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com", "password": "a-strong-password-12+"}' \
+  -d '{"email": "you@example.com", "password": "A-Strong-Password-12+"}' \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
 curl -X POST http://localhost:8000/api/v1/projects \

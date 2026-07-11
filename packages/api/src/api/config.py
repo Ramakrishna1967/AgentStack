@@ -39,7 +39,7 @@ if settings.JWT_SECRET_KEY in _INSECURE_DEFAULTS:
     if settings.ENVIRONMENT != "development":
         print(
             "FATAL: JWT_SECRET_KEY is not set or uses an insecure default.\n"
-            "       Set the SECRET_KEY environment variable before starting in production.",
+            "       Set the JWT_SECRET_KEY environment variable before starting in production.",
             file=sys.stderr,
         )
         sys.exit(1)
