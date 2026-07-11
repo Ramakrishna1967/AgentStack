@@ -10,17 +10,6 @@ import KPICard from "../components/KPICard";
 import { apiClient } from "../lib/api";
 import type { AnalyticsData, AnalyticsResponse } from "../lib/types";
 
-// Mock token data moved outside component to satisfy strict purity rules
-const MOCK_TOKEN_DATA = [
-    { timestamp: new Date(Date.now() - 6*86400000).toISOString(), prompt_tokens: 4000, completion_tokens: 1200 },
-    { timestamp: new Date(Date.now() - 5*86400000).toISOString(), prompt_tokens: 6500, completion_tokens: 3000 },
-    { timestamp: new Date(Date.now() - 4*86400000).toISOString(), prompt_tokens: 3200, completion_tokens: 800 },
-    { timestamp: new Date(Date.now() - 3*86400000).toISOString(), prompt_tokens: 8900, completion_tokens: 4100 },
-    { timestamp: new Date(Date.now() - 2*86400000).toISOString(), prompt_tokens: 12500, completion_tokens: 5600 },
-    { timestamp: new Date(Date.now() - 1*86400000).toISOString(), prompt_tokens: 11200, completion_tokens: 4900 },
-    { timestamp: new Date().toISOString(), prompt_tokens: 15400, completion_tokens: 7200 },
-];
-
 export const Analytics: React.FC = () => {
     const { currentProject } = useProject();
 
@@ -40,7 +29,10 @@ export const Analytics: React.FC = () => {
     });
 
     const totalSpend = costAnalytics?.data?.reduce((acc: number, curr: AnalyticsData) => acc + (Number(curr.total_cost) || 0), 0) || 0;
-    const totalTokens = MOCK_TOKEN_DATA.reduce((acc, curr) => acc + curr.prompt_tokens + curr.completion_tokens, 0);
+    const totalTokens = costAnalytics?.data?.reduce(
+        (acc: number, curr: AnalyticsData) => acc + (Number(curr.prompt_tokens) || 0) + (Number(curr.completion_tokens) || 0),
+        0,
+    ) || 0;
 
     const chartData = costAnalytics?.data?.map(item => {
         const row: Record<string, string | number> = {};
@@ -124,9 +116,15 @@ export const Analytics: React.FC = () => {
                         <span className="text-[var(--text-primary)]">Token_Usage_7D</span>
                     </h2>
                     <div className="bg-black border-2 border-[var(--border-primary)] p-4 shadow-[var(--shadow-sm)]">
-                        <div className="h-64">
-                            <TokenUsageChart data={MOCK_TOKEN_DATA} />
-                        </div>
+                        {isCostLoading ? (
+                            <div className="h-64 flex flex-col items-center justify-center">
+                                <span className="text-[var(--accent-green)] animate-pulse uppercase font-bold tracking-widest">&gt; LOADING_TOKEN_DATA...</span>
+                            </div>
+                        ) : (
+                            <div className="h-64">
+                                <TokenUsageChart data={chartData} />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

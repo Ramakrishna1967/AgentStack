@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 interface TokenUsageChartProps {
-    data: { timestamp: string, prompt_tokens: number, completion_tokens: number }[];
+    data: Record<string, string | number>[]; // { timestamp: string, prompt_tokens: number, completion_tokens: number }
 }
 
 export const TokenUsageChart: React.FC<TokenUsageChartProps> = ({ data }) => {
