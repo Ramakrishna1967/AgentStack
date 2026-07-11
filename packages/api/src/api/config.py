@@ -20,9 +20,6 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "agentstack.db"
 
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
-
     # Environment
     ENVIRONMENT: str = "development"
     DEMO_MODE: bool = False  # SECURITY: Must be explicitly enabled for demo mode

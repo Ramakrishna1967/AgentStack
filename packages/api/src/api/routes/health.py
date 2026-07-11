@@ -5,16 +5,15 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
-from api.db import get_database
-from api.config import settings
-import redis.asyncio as redis
-import os
 import time
+
+from fastapi import APIRouter
+
+from api.config import settings
+from api.db import get_database
 
 router = APIRouter()
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 _START_TIME = time.time()
 
 
@@ -24,16 +23,6 @@ async def health_check():
 
     Returns individual service status and overall health.
     """
-    # Redis (with proper connection cleanup)
-    redis_ok = False
-    try:
-        r = redis.from_url(REDIS_URL, decode_responses=True)
-        await r.ping()
-        redis_ok = True
-        await r.close()
-    except Exception:
-        pass
-
     # SQLite (API's own database)
     sqlite_ok = False
     try:
@@ -45,16 +34,12 @@ async def health_check():
     except Exception:
         pass
 
-    all_ok = redis_ok and sqlite_ok
-    any_ok = redis_ok or sqlite_ok
-
     return {
-        "status": "healthy" if all_ok else ("degraded" if any_ok else "down"),
+        "status": "healthy" if sqlite_ok else "down",
         "version": "0.1.0-alpha",
         "uptime_seconds": round(time.time() - _START_TIME, 1),
         "environment": settings.ENVIRONMENT,
         "services": {
-            "redis": "operational" if redis_ok else "down",
             "sqlite": "operational" if sqlite_ok else "down",
         }
     }
