@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import sqlite3
 import time
 import uuid
 
@@ -247,6 +248,15 @@ async def _consume_loop(queue: asyncio.Queue) -> None:
             await _process_span(span)
         except asyncio.CancelledError:
             raise
+        except sqlite3.IntegrityError:
+            # FK violation on project_id: the project was deleted between
+            # the request's API-key check and this span being drained off
+            # the queue (revoked/stale key raced a delete). Not a bug --
+            # reject it distinctly so it doesn't read as an unknown crash.
+            logger.warning(
+                "Rejected span %s for project_id=%s: project no longer exists, dropping",
+                span.get("span_id", "?"), span.get("project_id", "?"),
+            )
         except Exception:
             logger.exception("Failed to process span %s, dropping", span.get("span_id", "?"))
         finally:

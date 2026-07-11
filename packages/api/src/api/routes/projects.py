@@ -17,6 +17,7 @@ import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException
 from passlib.hash import pbkdf2_sha256 as pwd_context
 
+from api.apikey_auth import invalidate_key_cache
 from api.db import get_db
 from api.dependencies import get_current_active_user, verify_project_ownership
 from api.schemas import ProjectSchema, ProjectCreateRequest, ProjectCreateResponse
@@ -150,4 +151,10 @@ async def delete_project(
 
     await db.execute("DELETE FROM projects WHERE id = ?", (project_id,))
     await db.commit()
+
+    # The cache is keyed by a hash of the plaintext API key, which we never
+    # store -- so we can't evict just this project's entry. Clear the whole
+    # cache; it's a rare operation and the next request per key just costs
+    # one full pbkdf2 scan to repopulate.
+    invalidate_key_cache()
     return None
