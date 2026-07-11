@@ -7,10 +7,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.db import get_database
 from api.middleware import add_cors_middleware, rate_limit_middleware
@@ -23,6 +26,15 @@ logger = logging.getLogger("agentstack.api")
 # In-process replacement for the old Redis "spans.ingest" stream, drained by
 # span_consumer.py (cost calc, security rules, SQLite writes, WS broadcast).
 SPAN_QUEUE_MAXSIZE = 10_000
+
+# Dashboard's built `dist/`, copied here by packages/api/Dockerfile's
+# frontend build stage. Not present in local dev unless built and copied
+# manually — the mount below is skipped when this directory is absent.
+STATIC_DIR = Path(os.getenv("DASHBOARD_DIST_DIR", Path(__file__).resolve().parent / "static"))
+
+# Prefixes reserved for the API — unmatched paths under these fall through
+# to a normal 404 instead of the SPA fallback's index.html.
+_RESERVED_PREFIXES = ("api/", "docs", "redoc", "openapi.json")
 
 
 @asynccontextmanager
@@ -87,6 +99,22 @@ def create_app() -> FastAPI:
     # No /api/v1 prefix — SDK talks to /v1/traces directly, same as the
     # standalone collector did.
     app.include_router(ingest.router, tags=["ingest"])
+
+    # Serve the dashboard's built dist/ — replaces the nginx gateway's static
+    # serving + SPA fallback (try_files ... /index.html).
+    if STATIC_DIR.is_dir():
+        assets_dir = STATIC_DIR / "assets"
+        if assets_dir.is_dir():
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="dashboard-assets")
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def spa_fallback(full_path: str):
+            if full_path.startswith(_RESERVED_PREFIXES):
+                raise HTTPException(status_code=404)
+            candidate = STATIC_DIR / full_path
+            if candidate.is_file():
+                return FileResponse(candidate)
+            return FileResponse(STATIC_DIR / "index.html")
 
     return app
 

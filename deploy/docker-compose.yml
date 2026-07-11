@@ -55,8 +55,8 @@ services:
   # --- Backend ---
   api:
     build:
-      context: ../packages/api
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: packages/api/Dockerfile
     container_name: agentstack-api
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000
     depends_on:
@@ -186,31 +186,6 @@ services:
       resources:
         limits:
           memory: 256M
-
-  # --- Frontend ---
-  dashboard:
-    build:
-      context: ../packages/dashboard
-      dockerfile: Dockerfile
-    container_name: agentstack-dashboard
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-
-  # --- Gateway ---
-  nginx:
-    image: nginx:alpine
-    container_name: agentstack-gateway
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-    ports:
-      - "80:80"
-      # Uncomment for TLS:
-      # - "443:443"
-    depends_on:
-      - api
-      - collector
 
 volumes:
   redis_data:

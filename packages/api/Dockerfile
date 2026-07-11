@@ -1,3 +1,13 @@
+FROM node:20-alpine AS dashboard-builder
+
+WORKDIR /dashboard
+
+COPY packages/dashboard/package.json packages/dashboard/package-lock.json* ./
+RUN npm install
+
+COPY packages/dashboard/. .
+RUN npm run build
+
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -9,11 +19,14 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuse
 RUN pip install --no-cache-dir hatch
 
 # Copy package files
-COPY pyproject.toml README.md ./
-COPY src ./src
+COPY packages/api/pyproject.toml packages/api/README.md ./
+COPY packages/api/src ./src
 
 # Install dependencies
 RUN pip install --no-cache-dir .
+
+# Dashboard's built dist/, served by main.py's StaticFiles mount + SPA fallback
+COPY --from=dashboard-builder /dashboard/dist ./src/api/static
 
 # Create data directory with correct permissions
 RUN mkdir -p /data && chown -R appuser:appuser /data /app

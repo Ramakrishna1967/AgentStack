@@ -9,7 +9,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Span } from "../lib/types";
 
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8000/ws/traces";
+// Same-origin default, mirroring lib/api.ts — the merged app serves the
+// dashboard and the API from the same port, so there's no separate gateway host.
+const WS_URL =
+    import.meta.env.VITE_WS_URL ||
+    `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/traces`;
 
 export interface WSMessage<T = unknown> {
     type: "span" | "trace" | "ping" | "pong" | "filter_ack" | "error" | "alert";
