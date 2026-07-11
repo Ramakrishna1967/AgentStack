@@ -91,11 +91,12 @@ def span_context(span: Span) -> Generator[Span, None, None]:
         logger.warning(f"Span nesting depth limit ({_MAX_SPAN_DEPTH}) reached. "
                       f"New span will not be added to context stack. "
                       f"This may indicate infinite recursion or excessive nesting.")
-        # Still yield the span but don't add to stack to prevent overflow
-        try:
-            yield span
-        finally:
-            return
+        # Still yield the span but don't add to stack to prevent overflow.
+        # No try/finally here: there's nothing to clean up (we never pushed
+        # onto the stack), and a bare `return` in `finally` would silently
+        # discard any exception the wrapped function raises.
+        yield span
+        return
     
     new_stack = stack.copy()
     new_stack.append(span)

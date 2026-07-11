@@ -149,3 +149,36 @@ def test_span_context_exception_handling():
     # Context should be cleared after exception
     clear_context()
     assert get_current_span() is None
+
+
+def test_span_context_depth_limit_does_not_swallow_exceptions():
+    """Past _MAX_SPAN_DEPTH, span_context must still propagate the
+    wrapped block's real exception.
+
+    A prior bug wrapped the depth-limit branch's `yield span` in a bare
+    `try/finally: return`, which silently discards any exception raised
+    inside the `with` block once nesting hits the limit -- replacing it
+    with a confusing UnboundLocalError from the caller's next line
+    instead of the real error.
+    """
+    from oxly.context import _MAX_SPAN_DEPTH
+
+    clear_context()
+    tracer = Tracer.get_tracer()
+
+    entered = []
+    try:
+        for i in range(_MAX_SPAN_DEPTH):
+            span = tracer.start_span(f"span{i}")
+            cm = span_context(span)
+            cm.__enter__()
+            entered.append(cm)
+
+        overflow_span = tracer.start_span("overflow")
+        with pytest.raises(ValueError, match="real error"):
+            with span_context(overflow_span):
+                raise ValueError("real error")
+    finally:
+        for cm in reversed(entered):
+            cm.__exit__(None, None, None)
+        clear_context()
