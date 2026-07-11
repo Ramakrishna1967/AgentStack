@@ -52,8 +52,6 @@ Open a GitHub issue with:
 - Minimal reproduction steps
 - Expected vs actual behavior
 
-For security issues, see [SECURITY.md](SECURITY.md).
-
 ## License
 
 By contributing, you agree your contributions will be licensed under Apache 2.0.

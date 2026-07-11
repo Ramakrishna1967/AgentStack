@@ -34,7 +34,6 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Pricing table updated with current models: `gpt-4o-mini`, `claude-3-5-sonnet`, `claude-3-5-haiku`, `claude-opus-4`, `claude-sonnet-4`, Gemini 1.5/2.0, embedding models
 
 ### Added
-- `SECURITY.md` — vulnerability disclosure policy
 - `CONTRIBUTING.md` — contributor guide
 - `mypy` type checking added to CI
 
