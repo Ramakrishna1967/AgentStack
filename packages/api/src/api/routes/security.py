@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Security alert routes — query alerts by severity and project."""
+"""Security alert routes  query alerts by severity and project."""
 
 from __future__ import annotations
 

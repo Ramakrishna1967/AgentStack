@@ -12,7 +12,7 @@ import { Analytics } from "./pages/Analytics";
 import Metrics from "./pages/Metrics";
 import Settings from "./pages/Settings";
 
-// ── Inline SVG icons ───────────────────────────────────────────────────────────
+//  Inline SVG icons 
 const IconLayers = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
     <polygon points="12 2 2 7 12 12 22 7 12 2"/>
@@ -44,7 +44,7 @@ const IconSettings = () => (
   </svg>
 );
 
-// ── Nav Item ───────────────────────────────────────────────────────────────────
+//  Nav Item 
 const NavItem: React.FC<{ to: string; label: string; icon: React.ReactNode }> = ({ to, label, icon }) => {
   const location = useLocation();
   const isActive = location.pathname === to || (to !== "/" && location.pathname.startsWith(to));
@@ -74,7 +74,7 @@ const NavItem: React.FC<{ to: string; label: string; icon: React.ReactNode }> = 
   );
 };
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
+//  Sidebar 
 const Sidebar: React.FC = () => (
   <aside style={{
     width: "180px",
@@ -143,7 +143,7 @@ const Sidebar: React.FC = () => (
   </aside>
 );
 
-// ── App ────────────────────────────────────────────────────────────────────────
+//  App 
 const App: React.FC = () => {
   const isAuthenticated = localStorage.getItem("agentstack_token") !== null || true;
   if (!isAuthenticated) return <LoginPage />;
@@ -163,7 +163,7 @@ const App: React.FC = () => {
               <Route path="/settings" element={<Settings />} />
               <Route path="/deployments" element={<Dashboard />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="*" element={<div style={{ textAlign: "center", paddingTop: 80, color: "#555" }}>404 — Not Found</div>} />
+              <Route path="*" element={<div style={{ textAlign: "center", paddingTop: 80, color: "#555" }}>404  Not Found</div>} />
             </Routes>
           </main>
         </div>
@@ -184,7 +184,7 @@ const LoginPage: React.FC = () => (
         </div>
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: "block", fontSize: 13, color: "#888", marginBottom: 6 }}>Password</label>
-          <input type="password" placeholder="••••••••" style={{ width: "100%", background: "#111", border: "1px solid #222", borderRadius: 8, padding: "10px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} required />
+          <input type="password" placeholder="" style={{ width: "100%", background: "#111", border: "1px solid #222", borderRadius: 8, padding: "10px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} required />
         </div>
         <button type="submit" style={{ width: "100%", background: "#fff", color: "#000", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Sign In</button>
       </form>

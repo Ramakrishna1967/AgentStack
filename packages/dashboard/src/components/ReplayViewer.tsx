@@ -73,7 +73,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
             <div className="bg-[var(--bg-tertiary)] border-b border-[var(--border-primary)] p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <span className="text-[var(--accent-blue)]">⏪</span> Time Machine
+                        <span className="text-[var(--accent-blue)]"></span> Time Machine
                     </h3>
                     <div className="text-sm font-mono bg-[var(--bg-primary)] px-2 py-1 rounded text-[var(--text-secondary)]">
                         Step {currentIndex + 1} / {spans.length}
@@ -96,7 +96,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
                         className="p-2 rounded hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors"
                         title="Step Back"
                     >
-                        ⏪
+                        
                     </button>
                     <button
                         onClick={() => setIsPlaying(!isPlaying)}
@@ -111,7 +111,7 @@ const ReplayViewer: React.FC<ReplayViewerProps> = ({ traceId }) => {
                         className="p-2 rounded hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors"
                         title="Step Forward"
                     >
-                        ⏩
+                        
                     </button>
                 </div>
             </div>

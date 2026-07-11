@@ -41,7 +41,7 @@ class SpanEvent(BaseModel):
 class SpanModel(BaseModel):
     """Canonical Span data model matching the ClickHouse `spans` table schema.
 
-    A Span represents a single unit of work within a Trace — an LLM call,
+    A Span represents a single unit of work within a Trace  an LLM call,
     a tool invocation, a memory read, or any @observe-decorated function.
     """
 

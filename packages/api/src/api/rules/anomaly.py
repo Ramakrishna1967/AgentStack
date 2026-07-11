@@ -36,7 +36,7 @@ def check_anomaly(span: dict) -> list[str]:
     duration = span.get("duration_ms", 0) or 0
     if duration > 300_000:  # 5 minutes
         anomalies.append(f"Excessive duration: {duration}ms")
-    elif duration > 60_000:  # 1 minute — note but don't alert
+    elif duration > 60_000:  # 1 minute  note but don't alert
         pass  # Could log at debug level if needed
 
     # 2. Token explosion (cost anomaly)

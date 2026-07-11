@@ -139,7 +139,7 @@ export const Security: React.FC = () => {
           </div>
         </div>
 
-        {/* Right column — Alert Feed */}
+        {/* Right column  Alert Feed */}
         <div style={{ ...S.card, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ padding: "14px 16px", borderBottom: "1px solid #1a1a1a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

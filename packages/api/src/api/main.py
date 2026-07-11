@@ -63,7 +63,7 @@ def create_app() -> FastAPI:
     """FastAPI application factory."""
     app = FastAPI(
         title="AgentStack API",
-        description="Chrome DevTools for AI Agents — Observability API",
+        description="Chrome DevTools for AI Agents  Observability API",
         version="0.1.0-alpha",
         lifespan=lifespan,
     )

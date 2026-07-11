@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Span routes — individual span detail."""
+"""Span routes  individual span detail."""
 
 from __future__ import annotations
 

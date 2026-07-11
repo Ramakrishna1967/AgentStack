@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * LiveFeed component — real-time trace/span streaming display
+ * LiveFeed component  real-time trace/span streaming display
  */
 
 import React from "react";

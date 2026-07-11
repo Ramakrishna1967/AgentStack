@@ -271,7 +271,7 @@ class LocalStore:
         return f"LocalStore(db={self._db_path}, unsent={self.unsent_count})"
 
 
-# ── Module-level singleton ────────────────────────────────────────────
+#  Module-level singleton 
 
 _store: LocalStore | None = None
 

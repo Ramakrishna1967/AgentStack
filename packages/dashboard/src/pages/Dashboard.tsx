@@ -6,7 +6,7 @@ import apiClient from "../lib/api";
 import { useProject } from "../components/ProjectSwitcher";
 import type { Trace, HealthServices } from "../lib/types";
 
-// ── Shared style tokens ────────────────────────────────────────────────────────
+//  Shared style tokens 
 const S = {
   card: { background: "#0d0d0d", border: "1px solid #1e1e1e", borderRadius: 8 } as React.CSSProperties,
   label: { fontSize: 11, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase" as const, fontWeight: 500 },
@@ -14,7 +14,7 @@ const S = {
   muted: { fontSize: 12, color: "#555" } as React.CSSProperties,
 };
 
-// ── Sparkline ─────────────────────────────────────────────────────────────────
+//  Sparkline 
 const Sparkline: React.FC<{ path: string }> = ({ path }) => (
   <svg width="100%" height="30" viewBox="0 0 120 30" preserveAspectRatio="none">
     <path d={path} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -28,7 +28,7 @@ const SPARKLINES = {
   wavy: "M0 18 C15 8 30 28 45 18 C60 8 75 28 90 18 C105 8 115 14 120 15",
 };
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
+//  Stat Card 
 const StatCard: React.FC<{
   label: string; value: string; change: string; up: boolean; spark: string;
 }> = ({ label, value, change, up, spark }) => (
@@ -36,7 +36,7 @@ const StatCard: React.FC<{
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
       <span style={S.label}>{label}</span>
       <span style={{ fontSize: 11, color: up ? "#22c55e" : "#ef4444", display: "flex", alignItems: "center", gap: 2 }}>
-        {up ? "↑" : "↓"} {change}
+        {up ? "" : ""} {change}
       </span>
     </div>
     <div style={{ fontSize: 32, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{value}</div>
@@ -44,7 +44,7 @@ const StatCard: React.FC<{
   </div>
 );
 
-// ── Bar Chart for latency ─────────────────────────────────────────────────────
+//  Bar Chart for latency 
 const LatencyBars: React.FC<{ data: number[] }> = ({ data }) => {
   const max = Math.max(...data, 100);
   return (
@@ -57,7 +57,7 @@ const LatencyBars: React.FC<{ data: number[] }> = ({ data }) => {
   );
 };
 
-// ── Dashboard Page ─────────────────────────────────────────────────────────────
+//  Dashboard Page 
 const Dashboard: React.FC = () => {
   const { currentProject } = useProject();
   const [traces, setTraces] = useState<Trace[]>([]);

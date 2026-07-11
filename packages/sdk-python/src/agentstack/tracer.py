@@ -1,7 +1,7 @@
 # Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tracer singleton and Span class — the heart of the AgentStack SDK.
+"""Tracer singleton and Span class  the heart of the AgentStack SDK.
 
 The Tracer is responsible for creating Spans. Each Span represents a unit
 of work (LLM call, tool use, memory read, etc.) and is the primary data
@@ -35,7 +35,7 @@ class Span:
     and status for one operation. On `.end()`, the span is sanitized for
     PII and dispatched to the BatchSpanProcessor for export.
 
-    This class is NOT a Pydantic model — it is a mutable, lightweight
+    This class is NOT a Pydantic model  it is a mutable, lightweight
     wrapper used during the span's lifetime. On `.end()`, it is converted
     to a `SpanModel` for serialization.
     """
@@ -69,7 +69,7 @@ class Span:
         self.parent_span_id: str | None = parent_span_id or get_parent_span_id()
         self.name: str = name
 
-        # Timing — wall-clock for absolute timestamps, monotonic for duration
+        # Timing  wall-clock for absolute timestamps, monotonic for duration
         self.start_time_ns: int = wall_clock_ns()
         self._start_mono_ns: int = monotonic_ns()
         self.end_time_ns: int = 0
@@ -155,7 +155,7 @@ class Span:
     def end(self) -> None:
         """End this span: record timing, sanitize PII, and queue for export.
 
-        This method is idempotent — calling it multiple times has no effect
+        This method is idempotent  calling it multiple times has no effect
         after the first call.
         """
         if self._ended:

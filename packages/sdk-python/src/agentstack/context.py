@@ -5,7 +5,7 @@
 
 Uses Python's `contextvars` module to maintain a per-task/per-thread context
 that tracks the current trace_id and active span stack. This ensures that
-nested @observe calls automatically link parent → child spans without any
+nested @observe calls automatically link parent  child spans without any
 manual wiring, even across async tasks.
 
 Usage:
@@ -27,11 +27,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("agentstack.context")
 
-# ── Configuration ───────────────────────────────────────────────────────
+#  Configuration 
 # Maximum span nesting depth to prevent stack overflow
 _MAX_SPAN_DEPTH = 100
 
-# ── Context Variables ──────────────────────────────────────────────────
+#  Context Variables 
 # These are the two core context vars that propagate across async boundaries.
 
 _trace_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
@@ -43,7 +43,7 @@ _span_stack_var: contextvars.ContextVar[list["Span"]] = contextvars.ContextVar(
 )
 
 
-# ── Public API ─────────────────────────────────────────────────────────
+#  Public API 
 
 
 def get_current_trace_id() -> str | None:

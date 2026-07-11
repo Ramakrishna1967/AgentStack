@@ -6,7 +6,7 @@
 Automatically creates spans for each LangGraph node execution by wrapping
 the node functions when the graph is compiled.
 
-This is completely transparent — developers don't need to add @observe to
+This is completely transparent  developers don't need to add @observe to
 their node functions. AgentStack captures:
     - Node name
     - Input state
