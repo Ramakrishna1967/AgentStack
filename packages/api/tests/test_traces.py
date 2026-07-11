@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Integration tests for trace and project API endpoints."""
@@ -24,7 +24,7 @@ class TestHealth:
         response = await client.get("/")
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "AgentStack API"
+        assert data["name"] == "Oxly API"
 
 
 class TestAuth:

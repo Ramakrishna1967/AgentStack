@@ -1,7 +1,7 @@
-﻿"""
-AgentStack Real-World Test: LangGraph + Gemini
+"""
+Oxly Real-World Test: LangGraph + Gemini
 This script demonstrates a real-world AI agent workflow using LangGraph 
-and Google's Gemini API, fully instrumented with the AgentStack SDK.
+and Google's Gemini API, fully instrumented with the Oxly SDK.
 """
 import os
 import sys
@@ -16,7 +16,7 @@ if not GOOGLE_API_KEY:
     raise ValueError("GOOGLE_API_KEY environment variable is required")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-# AgentStack Configuration
+# Oxly Configuration
 os.environ.setdefault("OXLY_COLLECTOR_URL", "http://localhost:8000")
 os.environ.setdefault("OXLY_API_KEY", os.environ.get("OXLY_API_KEY", ""))
 os.environ.setdefault("OXLY_PROJECT_ID", "real-world-test")
@@ -42,7 +42,7 @@ except ImportError as e:
         print(f"Deployment Error: Missing dependencies. Error: {e}")
         sys.exit(1)
 
-#  INITIALIZE AGENTSTACK 
+#  INITIALIZE OXLY 
 # auto_instrument=True automatically monkey-patches LangGraph nodes
 oxly.init(auto_instrument=True)
 
@@ -95,7 +95,7 @@ def validator_node(state: AgentState):
     logger.info("Node [Validator]: Checking output quality...")
     report = state["report"] or ""
     
-    # Intentionally trigger an error for specific queries to test AgentStack's error tracing
+    # Intentionally trigger an error for specific queries to test Oxly's error tracing
     if "fail" in state["query"].lower():
         logger.warning("Simulating intentional failure for testing...")
         raise ValueError("Simulated Validation Error: Output contains restricted content policy violation.")
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     run_test("Simulate a failure or restricted content scenario.")
 
     # Ensure traces are sent to backend
-    logger.info("Flushing Traces to AgentStack Dashboard...")
+    logger.info("Flushing Traces to Oxly Dashboard...")
     try:
         from oxly.exporter import get_processor
         processor = get_processor()

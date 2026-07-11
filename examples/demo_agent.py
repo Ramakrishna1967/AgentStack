@@ -1,7 +1,7 @@
-﻿"""
-AgentStack Demo - Complex Workflow
+"""
+Oxly Demo - Complex Workflow
 This example demonstrates a multi-step LangGraph workflow with manual instrumentation,
-simulated errors, and prompt injections to showcase AgentStack's security features.
+simulated errors, and prompt injections to showcase Oxly's security features.
 """
 import os
 import sys
@@ -35,7 +35,7 @@ except ImportError:
     from oxly.tracer import Tracer
     from oxly.context import get_current_span
 
-# Initialize AgentStack with API key from environment
+# Initialize Oxly with API key from environment
 init(api_key=os.environ.get("OXLY_API_KEY"))
 
 class State(TypedDict):
@@ -100,7 +100,7 @@ def write_email(state: State):
     
     # Simulate an intentional software/API error during email composition
     if "OVERRIDE" in state.get("context", ""):
-        # We explicitly raise an exception so AgentStack traces it as an anomalous ERROR
+        # We explicitly raise an exception so Oxly traces it as an anomalous ERROR
         raise ValueError("Critical Security Exception: Prompt Injection Payload detected by external WAF during compilation.")
         
     email_draft = f"Subject: Analysis\n\nBased on your query, {state.get('summary')}."
@@ -155,7 +155,7 @@ if __name__ == "__main__":
         logger.info(f"Workflow correctly caught and traced expected error: {e}")
 
     # Ensure traces are sent to backend
-    logger.info("Flushing Traces to AgentStack Dashboard...")
+    logger.info("Flushing Traces to Oxly Dashboard...")
     try:
         from oxly.exporter import get_processor
         processor = get_processor()

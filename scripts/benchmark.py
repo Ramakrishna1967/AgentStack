@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """
-AgentStack Benchmark Script
+Oxly Benchmark Script
 
-This script simulates a highly concurrent load on the AgentStack Collector
+This script simulates a highly concurrent load on the Oxly Collector
 to verify its ingestion performance and capacity claims.
 """
 
@@ -62,7 +62,7 @@ async def worker(session: aiohttp.ClientSession, url: str, headers: dict, reques
         results.append((status, latency))
 
 async def main():
-    parser = argparse.ArgumentParser(description="AgentStack Collector Benchmark")
+    parser = argparse.ArgumentParser(description="Oxly Collector Benchmark")
     parser.add_argument("--workers", type=int, default=100, help="Number of concurrent workers")
     parser.add_argument("--requests", type=int, default=10000, help="Total requests to send")
     parser.add_argument("--url", type=str, default=COLLECTOR_URL, help="Collector endpoint")

@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Local SQLite storage for offline span persistence.

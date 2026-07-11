@@ -1,7 +1,7 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Pydantic v2 data models for AgentStack spans and traces.
+"""Pydantic v2 data models for Oxly spans and traces.
 
 These models define the canonical data shapes used throughout the SDK.
 Field names and types align with the ClickHouse schema defined in the

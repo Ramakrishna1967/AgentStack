@@ -1,7 +1,7 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""@observe decorator  the primary developer-facing API of AgentStack.
+"""@observe decorator  the primary developer-facing API of Oxly.
 
 Wraps sync and async functions to automatically create spans that capture
 function arguments, return values, exceptions, and timing. The decorator
@@ -228,7 +228,7 @@ def observe(
     capture_args: bool = True,
     capture_result: bool = True,
 ) -> F | Callable[[F], F]:
-    """Decorator to instrument a function for AgentStack observability.
+    """Decorator to instrument a function for Oxly observability.
 
     Creates a Span for each function call, capturing arguments, return values,
     exceptions, and timing. Works on both sync and async functions.

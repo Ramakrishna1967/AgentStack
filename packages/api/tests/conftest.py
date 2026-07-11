@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Test fixtures and shared configuration for API integration tests."""
@@ -78,13 +78,13 @@ async def auth_headers(client):
     # Register
     await client.post(
         "/api/v1/auth/register",
-        json={"email": "test@agentstack.dev", "password": "testpassword123"},
+        json={"email": "test@oxly.dev", "password": "testpassword123"},
     )
 
     # Login
     response = await client.post(
         "/api/v1/auth/login",
-        json={"email": "test@agentstack.dev", "password": "testpassword123"},
+        json={"email": "test@oxly.dev", "password": "testpassword123"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

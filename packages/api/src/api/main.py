@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """FastAPI application factory with lifespan management and CORS."""
@@ -41,7 +41,7 @@ _RESERVED_PREFIXES = ("api/", "docs", "redoc", "openapi.json")
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown events."""
     # Startup
-    logger.info("AgentStack API starting...")
+    logger.info("Oxly API starting...")
     db = get_database()
     await db.init_db()
     logger.info("Database initialized successfully")
@@ -56,13 +56,13 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await stop_span_consumer(app)
     await stop_retention_sweep(app)
-    logger.info("AgentStack API shutting down...")
+    logger.info("Oxly API shutting down...")
 
 
 def create_app() -> FastAPI:
     """FastAPI application factory."""
     app = FastAPI(
-        title="AgentStack API",
+        title="Oxly API",
         description="Chrome DevTools for AI Agents  Observability API",
         version="0.1.0-alpha",
         lifespan=lifespan,
@@ -79,7 +79,7 @@ def create_app() -> FastAPI:
     async def root():
         """Root endpoint with API info."""
         return {
-            "name": "AgentStack API",
+            "name": "Oxly API",
             "version": "0.1.0-alpha",
             "docs": "/docs",
             "health": "/api/v1/health",

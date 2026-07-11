@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """LangGraph auto-instrumentation via monkey-patching.
@@ -7,7 +7,7 @@ Automatically creates spans for each LangGraph node execution by wrapping
 the node functions when the graph is compiled.
 
 This is completely transparent  developers don't need to add @observe to
-their node functions. AgentStack captures:
+their node functions. Oxly captures:
     - Node name
     - Input state
     - Output state

@@ -1,9 +1,9 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """HTTP transport layer with retry logic and exponential backoff.
 
-Sends serialized span batches to the AgentStack Collector via HTTP POST.
+Sends serialized span batches to the Oxly Collector via HTTP POST.
 Uses stdlib urllib to avoid adding external dependencies (httpx, aiohttp).
 
 Retry strategy:

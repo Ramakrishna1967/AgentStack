@@ -4,8 +4,8 @@ import json
 import uuid
 
 # Configuration
-COLLECTOR_URL = "http://agentstack-collector:4318/v1/traces"
-API_KEY = "ak_agentstack_demo_key_2026"
+COLLECTOR_URL = "http://oxly-collector:4318/v1/traces"
+API_KEY = "ak_oxly_demo_key_2026"
 PROJECT_ID = "demo-simulation"
 
 def send_span(name, trace_id=None, parent_id=None, status="OK", duration_ms=100):
@@ -19,7 +19,7 @@ def send_span(name, trace_id=None, parent_id=None, status="OK", duration_ms=100)
             "resource": {
                 "attributes": [
                     {"key": "service.name", "value": {"stringValue": "std-agent"}},
-                    {"key": "agentstack.project_id", "value": {"stringValue": PROJECT_ID}}
+                    {"key": "oxly.project_id", "value": {"stringValue": PROJECT_ID}}
                 ]
             },
             "scopeSpans": [{
@@ -33,7 +33,7 @@ def send_span(name, trace_id=None, parent_id=None, status="OK", duration_ms=100)
                     "endTimeUnixNano": str(end_time_unix_nano),
                     "status": {"code": 1 if status == "OK" else 2},
                     "attributes": [
-                        {"key": "agentstack.status", "value": {"stringValue": status}}
+                        {"key": "oxly.status", "value": {"stringValue": status}}
                     ]
                 }]
             }]
@@ -54,6 +54,6 @@ def send_span(name, trace_id=None, parent_id=None, status="OK", duration_ms=100)
     return trace_id, span_id
 
 if __name__ == "__main__":
-    print(" Starting AgentStack Standard Lib Simulation...")
+    print(" Starting Oxly Standard Lib Simulation...")
     tid, sid = send_span("Standard Lib Test Run", duration_ms=500)
     print(f" Simulation Complete. Trace ID: {tid}")

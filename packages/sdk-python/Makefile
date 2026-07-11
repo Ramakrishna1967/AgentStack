@@ -1,10 +1,10 @@
-# AgentStack SDK — Makefile
+# Oxly SDK — Makefile
 # Development commands for the Python SDK
 
 .PHONY: help install install-dev test test-cov lint format clean build
 
 help:
-	@echo "AgentStack SDK Development Commands"
+	@echo "Oxly SDK Development Commands"
 	@echo "===================================="
 	@echo "install       Install package in editable mode"
 	@echo "install-dev   Install with dev dependencies"
@@ -25,7 +25,7 @@ test:
 	pytest tests/ -v
 
 test-cov:
-	pytest tests/ -v --cov=src/agentstack --cov-report=term-missing --cov-report=html
+	pytest tests/ -v --cov=src/oxly --cov-report=term-missing --cov-report=html
 
 lint:
 	ruff check src/ tests/

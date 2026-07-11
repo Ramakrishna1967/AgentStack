@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Dependency injection for FastAPI routes."""
@@ -31,7 +31,7 @@ async def get_current_user(
     """Get current authenticated user (Optional for demo)."""
     if not credentials:
         if settings.DEMO_MODE:
-            return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+            return {"id": "demo", "email": "demo@oxly.sh", "is_active": True}
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -43,11 +43,11 @@ async def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
              if settings.DEMO_MODE:
-                return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+                return {"id": "demo", "email": "demo@oxly.sh", "is_active": True}
              raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
         if settings.DEMO_MODE:
-            return {"id": "demo", "email": "demo@agentstack.sh", "is_active": True}
+            return {"id": "demo", "email": "demo@oxly.sh", "is_active": True}
         raise HTTPException(status_code=401, detail="Invalid token")
 
     # Fetch user from database

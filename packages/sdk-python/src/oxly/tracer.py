@@ -1,11 +1,11 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tracer singleton and Span class  the heart of the AgentStack SDK.
+"""Tracer singleton and Span class  the heart of the Oxly SDK.
 
 The Tracer is responsible for creating Spans. Each Span represents a unit
 of work (LLM call, tool use, memory read, etc.) and is the primary data
-structure that flows through the entire AgentStack pipeline.
+structure that flows through the entire Oxly pipeline.
 
 Usage:
     tracer = Tracer.get_tracer()

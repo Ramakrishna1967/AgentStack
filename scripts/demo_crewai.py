@@ -1,4 +1,4 @@
-﻿"""Demo script to verify CrewAI Auto-Instrumentation in AgentStack.
+"""Demo script to verify CrewAI Auto-Instrumentation in Oxly.
 
 This script should generate traces WITHOUT using the @observe decorator.
 """
@@ -10,7 +10,7 @@ os.environ["OXLY_COLLECTOR_URL"] = "http://localhost:8000"
 os.environ["OXLY_API_KEY"] = "ak_demo123" # Mock API key
 
 # Ensure local sdk is found
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agentstack', 'packages', 'sdk-python', 'src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'oxly', 'packages', 'sdk-python', 'src')))
 
 try:
     from oxly import init
@@ -20,7 +20,7 @@ except ImportError as e:
     print(f"Skipping test, required modules missing: {e}")
     sys.exit(0)
 
-# Initialize AgentStack with auto-instrumentation ON
+# Initialize Oxly with auto-instrumentation ON
 init(
     project_id="demo-crewai",
     api_key="ak_demo123", # Mock API Key
@@ -60,8 +60,8 @@ def run_crewai_demo():
     print("\n--- Final Result ---")
     print(result)
 
-    # Flush trace data to AgentStack
-    print("\nFlushing telemetry data to AgentStack...")
+    # Flush trace data to Oxly
+    print("\nFlushing telemetry data to Oxly...")
     if hasattr(Tracer, 'get_tracer_provider'):
         provider = Tracer.get_tracer_provider()
         if provider:

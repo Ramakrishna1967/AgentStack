@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 [build-system]
@@ -8,12 +8,12 @@ build-backend = "hatchling.build"
 [project]
 name = "oxly-api"
 version = "0.1.0-alpha"
-description = "AgentStack API Server — FastAPI backend for trace ingestion and analytics"
+description = "Oxly API Server — FastAPI backend for trace ingestion and analytics"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
-    { name = "AgentStack Contributors" },
+    { name = "Oxly Contributors" },
 ]
 keywords = ["ai", "agents", "observability", "api", "fastapi"]
 classifiers = [
@@ -47,10 +47,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/agentstack/agentstack"
-Documentation = "https://github.com/agentstack/agentstack/tree/main/docs"
-Repository = "https://github.com/agentstack/agentstack"
-Issues = "https://github.com/agentstack/agentstack/issues"
+Homepage = "https://github.com/oxly/oxly"
+Documentation = "https://github.com/oxly/oxly/tree/main/docs"
+Repository = "https://github.com/oxly/oxly"
+Issues = "https://github.com/oxly/oxly/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/api"]

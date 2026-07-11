@@ -1,7 +1,7 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""AgentStack SDK  Chrome DevTools for AI Agents.
+"""Oxly SDK  Chrome DevTools for AI Agents.
 
 Provides observability for AI Agents built on LangGraph, CrewAI, AutoGen,
 and custom Python implementations.
@@ -85,7 +85,7 @@ def init(
     debug: bool | None = None,
     auto_instrument: bool = True,
 ) -> None:
-    """Initialize the AgentStack SDK with custom configuration.
+    """Initialize the Oxly SDK with custom configuration.
 
     Any provided arguments override the corresponding OXLY_* environment
     variables. Call this before any @observe decorators execute.

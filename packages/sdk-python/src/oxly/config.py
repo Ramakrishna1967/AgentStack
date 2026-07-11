@@ -1,7 +1,7 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""AgentStack SDK configuration loaded from environment variables.
+"""Oxly SDK configuration loaded from environment variables.
 
 All configuration is read from OXLY_* environment variables with sensible defaults.
 The Config singleton is initialized once and reused throughout the SDK lifecycle.

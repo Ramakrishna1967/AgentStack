@@ -1,7 +1,7 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Shared pytest fixtures for AgentStack SDK tests."""
+"""Shared pytest fixtures for Oxly SDK tests."""
 
 import os
 import tempfile

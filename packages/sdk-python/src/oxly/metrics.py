@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+# Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """SDK metrics collection for observability of the observability platform.
@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class SDKMetrics:
-    """Thread-safe metrics collector for the AgentStack SDK.
+    """Thread-safe metrics collector for the Oxly SDK.
 
     All fields use simple atomic counters for thread safety.
     Call snapshot() to get a consistent point-in-time view.
