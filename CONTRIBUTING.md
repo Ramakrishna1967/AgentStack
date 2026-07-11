@@ -17,12 +17,6 @@ pip install -e ./packages/sdk-python
 # API
 pip install -e ./packages/api
 
-# Collector
-pip install -e ./packages/collector
-
-# Workers
-pip install -e ./packages/workers
-
 # Dashboard
 cd packages/dashboard && npm ci
 ```
