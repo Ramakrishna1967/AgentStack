@@ -1,13 +1,13 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for Tracer and Span classes."""
 
 import pytest
 
-from agentstack.context import clear_context, get_current_trace_id, span_context
-from agentstack.models import SpanStatus
-from agentstack.tracer import Span, Tracer
+from oxly.context import clear_context, get_current_trace_id, span_context
+from oxly.models import SpanStatus
+from oxly.tracer import Span, Tracer
 
 
 def test_tracer_singleton():

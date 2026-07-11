@@ -6,7 +6,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agentstack-api"
+name = "oxly-api"
 version = "0.1.0-alpha"
 description = "AgentStack API Server — FastAPI backend for trace ingestion and analytics"
 readme = "README.md"

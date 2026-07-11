@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for context propagation."""
@@ -8,13 +8,13 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from agentstack.context import (
+from oxly.context import (
     clear_context,
     get_current_span,
     get_current_trace_id,
     span_context,
 )
-from agentstack.tracer import Tracer
+from oxly.tracer import Tracer
 
 
 def test_trace_id_propagation():

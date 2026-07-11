@@ -1,4 +1,4 @@
-"""Demo script to verify CrewAI Auto-Instrumentation in AgentStack.
+﻿"""Demo script to verify CrewAI Auto-Instrumentation in AgentStack.
 
 This script should generate traces WITHOUT using the @observe decorator.
 """
@@ -13,8 +13,8 @@ os.environ["AGENTSTACK_API_KEY"] = "ak_demo123" # Mock API key
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agentstack', 'packages', 'sdk-python', 'src')))
 
 try:
-    from agentstack import init
-    from agentstack.tracer import Tracer
+    from oxly import init
+    from oxly.tracer import Tracer
     from crewai import Agent, Task, Crew, Process
 except ImportError as e:
     print(f"Skipping test, required modules missing: {e}")

@@ -1,4 +1,4 @@
-"""
+﻿"""
 AgentStack Real-World Test: LangGraph + Gemini
 This script demonstrates a real-world AI agent workflow using LangGraph 
 and Google's Gemini API, fully instrumented with the AgentStack SDK.
@@ -26,16 +26,16 @@ sdk_path = os.environ.get("AGENTSTACK_SDK_PATH", "/app/packages/sdk-python/src")
 sys.path.insert(0, sdk_path)
 
 try:
-    import agentstack
-    from agentstack import observe
+    import oxly
+    from oxly import observe
     from langchain_google_genai import ChatGoogleGenerativeAI
     from langgraph.graph import StateGraph, END
 except ImportError as e:
     # Try local relative path as fallback
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'packages', 'sdk-python', 'src')))
     try:
-        import agentstack
-        from agentstack import observe
+        import oxly
+        from oxly import observe
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langgraph.graph import StateGraph, END
     except ImportError:
@@ -44,7 +44,7 @@ except ImportError as e:
 
 #  INITIALIZE AGENTSTACK 
 # auto_instrument=True automatically monkey-patches LangGraph nodes
-agentstack.init(auto_instrument=True)
+oxly.init(auto_instrument=True)
 
 #  DEFINITIONS 
 class AgentState(TypedDict):
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     # Ensure traces are sent to backend
     logger.info("Flushing Traces to AgentStack Dashboard...")
     try:
-        from agentstack.exporter import get_processor
+        from oxly.exporter import get_processor
         processor = get_processor()
         if processor:
             processor.flush()

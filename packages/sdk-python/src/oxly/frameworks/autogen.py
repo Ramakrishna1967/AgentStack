@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """AutoGen auto-instrumentation (stub for future implementation).
@@ -39,8 +39,8 @@ def instrument() -> None:
 
         @functools.wraps(original_generate_reply)
         def instrumented_generate_reply(self: Any, *args: Any, **kwargs: Any) -> Any:
-            from agentstack.tracer import Tracer
-            from agentstack.context import span_context
+            from oxly.tracer import Tracer
+            from oxly.context import span_context
             
             agent_name = getattr(self, "name", "unknown")
             span_name = f"autogen.agent.{agent_name}.generate"
@@ -80,8 +80,8 @@ def instrument() -> None:
 
         @functools.wraps(original_receive)
         def instrumented_receive(self: Any, *args: Any, **kwargs: Any) -> Any:
-            from agentstack.tracer import Tracer
-            from agentstack.context import span_context
+            from oxly.tracer import Tracer
+            from oxly.context import span_context
             
             # The message is usually the first arg
             message = args[0] if args else kwargs.get("message", "")

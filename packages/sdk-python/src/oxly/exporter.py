@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """BatchSpanProcessor  collects spans and exports them in batches.
@@ -26,13 +26,13 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from agentstack._internal.buffer import RingBuffer
-from agentstack._internal.transport import HttpTransport
-from agentstack.config import get_config
-from agentstack.local_store import LocalStore, get_local_store
+from oxly._internal.buffer import RingBuffer
+from oxly._internal.transport import HttpTransport
+from oxly.config import get_config
+from oxly.local_store import LocalStore, get_local_store
 
 if TYPE_CHECKING:
-    from agentstack.tracer import Span
+    from oxly.tracer import Span
 
 logger = logging.getLogger("agentstack")
 
@@ -168,7 +168,7 @@ class BatchSpanProcessor:
             latency_ms = (time.monotonic() - start_time) * 1000.0
             
             try:
-                from agentstack.metrics import get_metrics
+                from oxly.metrics import get_metrics
                 get_metrics().record_export(len(export_dicts), latency_ms, result.success)
                 if not result.success:
                     get_metrics().increment("export_retries")
@@ -190,7 +190,7 @@ class BatchSpanProcessor:
         saved = self._local_store.save_spans(span_models)
         self._fallback_count += saved
         try:
-            from agentstack.metrics import get_metrics
+            from oxly.metrics import get_metrics
             get_metrics().increment("local_store_saves", saved)
         except ImportError:
             pass
@@ -206,7 +206,7 @@ class BatchSpanProcessor:
         except Exception:
             logger.debug("Failed to retrieve unsent spans from local store", exc_info=True)
             try:
-                from agentstack.metrics import get_metrics
+                from oxly.metrics import get_metrics
                 get_metrics().increment("local_store_errors")
             except ImportError:
                 pass
@@ -223,7 +223,7 @@ class BatchSpanProcessor:
             self._local_store.mark_as_sent(span_ids)
             self._exported_count += len(span_ids)
             try:
-                from agentstack.metrics import get_metrics
+                from oxly.metrics import get_metrics
                 get_metrics().increment("local_store_retrievals", len(span_ids))
             except ImportError:
                 pass

@@ -47,7 +47,7 @@ Repository = "https://github.com/Ramakrishna1967/AgentState"
 Issues = "https://github.com/Ramakrishna1967/AgentState/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/agentstack"]
+packages = ["src/oxly"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

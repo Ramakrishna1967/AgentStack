@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Framework auto-detection and instrumentation.
@@ -65,7 +65,7 @@ def auto_instrument() -> dict[str, bool]:
     
     if detected.get("langgraph"):
         try:
-            from agentstack.frameworks import langgraph
+            from oxly.frameworks import langgraph
             langgraph.instrument()
             results["langgraph"] = True
             logger.debug("LangGraph auto-instrumentation applied")
@@ -75,7 +75,7 @@ def auto_instrument() -> dict[str, bool]:
     
     if detected.get("crewai"):
         try:
-            from agentstack.frameworks import crewai
+            from oxly.frameworks import crewai
             crewai.instrument()
             results["crewai"] = True
             logger.debug("CrewAI auto-instrumentation applied")
@@ -85,7 +85,7 @@ def auto_instrument() -> dict[str, bool]:
     
     if detected.get("autogen"):
         try:
-            from agentstack.frameworks import autogen
+            from oxly.frameworks import autogen
             autogen.instrument()
             results["autogen"] = True
             logger.debug("AutoGen auto-instrumentation applied")

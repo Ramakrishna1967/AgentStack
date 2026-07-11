@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Async-safe context propagation for trace and span linking.
@@ -23,7 +23,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator
 
 if TYPE_CHECKING:
-    from agentstack.tracer import Span
+    from oxly.tracer import Span
 
 logger = logging.getLogger("agentstack.context")
 

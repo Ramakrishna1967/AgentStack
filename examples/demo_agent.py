@@ -1,4 +1,4 @@
-"""
+﻿"""
 AgentStack Demo - Complex Workflow
 This example demonstrates a multi-step LangGraph workflow with manual instrumentation,
 simulated errors, and prompt injections to showcase AgentStack's security features.
@@ -26,14 +26,14 @@ sdk_path = os.environ.get("AGENTSTACK_SDK_PATH", os.path.abspath(os.path.join(os
 sys.path.insert(0, sdk_path)
 
 try:
-    from agentstack import init, observe
-    from agentstack.tracer import Tracer
-    from agentstack.context import get_current_span
+    from oxly import init, observe
+    from oxly.tracer import Tracer
+    from oxly.context import get_current_span
 except ImportError:
     # If not in path, we'll assume it's correctly mounted in docker
-    from agentstack import init, observe
-    from agentstack.tracer import Tracer
-    from agentstack.context import get_current_span
+    from oxly import init, observe
+    from oxly.tracer import Tracer
+    from oxly.context import get_current_span
 
 # Initialize AgentStack with API key from environment
 init(api_key=os.environ.get("AGENTSTACK_API_KEY"))
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # Ensure traces are sent to backend
     logger.info("Flushing Traces to AgentStack Dashboard...")
     try:
-        from agentstack.exporter import get_processor
+        from oxly.exporter import get_processor
         processor = get_processor()
         if processor:
             processor.flush()

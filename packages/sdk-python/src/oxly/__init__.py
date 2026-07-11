@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """AgentStack SDK  Chrome DevTools for AI Agents.
@@ -7,7 +7,7 @@ Provides observability for AI Agents built on LangGraph, CrewAI, AutoGen,
 and custom Python implementations.
 
 Quick Start:
-    from agentstack import observe
+    from oxly import observe
 
     @observe
     def my_agent(query: str) -> str:
@@ -35,8 +35,8 @@ __all__ = [
 import logging
 from typing import TYPE_CHECKING
 
-from agentstack.config import AgentStackConfig, get_config, reset_config
-from agentstack.tracer import Span, Tracer
+from oxly.config import OxlyConfig, get_config, reset_config
+from oxly.tracer import Span, Tracer
 
 # Lazy import to avoid circular dependency  decorator is built in Step 2
 # For now, provide a placeholder that gets replaced on first access.
@@ -63,7 +63,7 @@ def observe(func=None, *, name: str | None = None):
         name: Optional custom span name. Defaults to the function's __name__.
     """
     try:
-        from agentstack.decorator import observe as _obs
+        from oxly.decorator import observe as _obs
 
         return _obs(func, name=name)
     except ImportError:
@@ -113,7 +113,7 @@ def init(
     # Apply auto-instrumentation if requested
     if auto_instrument:
         try:
-            from agentstack.frameworks import auto_instrument as perform_auto_instrument
+            from oxly.frameworks import auto_instrument as perform_auto_instrument
             perform_auto_instrument()
         except ImportError:
             pass # Frameworks not available in this build step

@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tracer singleton and Span class  the heart of the AgentStack SDK.
@@ -20,10 +20,10 @@ import logging
 import uuid
 from typing import Any
 
-from agentstack._internal.clock import duration_ms, monotonic_ns, wall_clock_ns
-from agentstack.config import get_config
-from agentstack.context import get_current_trace_id, get_parent_span_id, set_current_trace_id
-from agentstack.models import SpanEvent, SpanModel, SpanStatus
+from oxly._internal.clock import duration_ms, monotonic_ns, wall_clock_ns
+from oxly.config import get_config
+from oxly.context import get_current_trace_id, get_parent_span_id, set_current_trace_id
+from oxly.models import SpanEvent, SpanModel, SpanStatus
 
 logger = logging.getLogger("agentstack")
 
@@ -175,7 +175,7 @@ class Span:
 
         # Sanitize PII before export
         try:
-            from agentstack.sanitizer import scrub_pii
+            from oxly.sanitizer import scrub_pii
             self.attributes = scrub_pii(self.attributes)
         except (ImportError, Exception):
             # Fallback for early build steps or unexpected errors
@@ -183,7 +183,7 @@ class Span:
 
         # Queue for export (import here to avoid circular import)
         try:
-            from agentstack.exporter import get_processor
+            from oxly.exporter import get_processor
 
             processor = get_processor()
             if processor is not None:

@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """AgentStack SDK configuration loaded from environment variables.
@@ -38,7 +38,7 @@ def _env_int(key: str, default: int = 0) -> int:
 
 
 @dataclass(frozen=True)
-class AgentStackConfig:
+class OxlyConfig:
     """Immutable SDK configuration read from environment variables.
 
     Attributes:
@@ -65,7 +65,7 @@ class AgentStackConfig:
     project_id: str = "default"
 
     @classmethod
-    def from_env(cls) -> AgentStackConfig:
+    def from_env(cls) -> OxlyConfig:
         """Create a Config instance by reading AGENTSTACK_* environment variables.
 
         Environment Variables:
@@ -98,14 +98,14 @@ class AgentStackConfig:
 # Module-level singleton
 # ---------------------------------------------------------------------------
 
-_config: AgentStackConfig | None = None
+_config: OxlyConfig | None = None
 
 
-def get_config() -> AgentStackConfig:
-    """Return the global AgentStackConfig singleton (lazy-initialized from env)."""
+def get_config() -> OxlyConfig:
+    """Return the global OxlyConfig singleton (lazy-initialized from env)."""
     global _config
     if _config is None:
-        _config = AgentStackConfig.from_env()
+        _config = OxlyConfig.from_env()
     return _config
 
 

@@ -1,11 +1,11 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for PII sanitizer."""
 
 import pytest
 
-from agentstack.sanitizer import (
+from oxly.sanitizer import (
     REDACTED_AWS_KEY,
     REDACTED_CC,
     REDACTED_EMAIL,

@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for SDK metrics collection."""
@@ -6,7 +6,7 @@
 import threading
 import time
 
-from agentstack.metrics import SDKMetrics, get_metrics
+from oxly.metrics import SDKMetrics, get_metrics
 
 
 def test_metrics_increment():

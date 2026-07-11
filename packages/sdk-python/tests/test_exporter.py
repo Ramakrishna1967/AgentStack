@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for BatchSpanProcessor and HTTP transport."""
@@ -7,11 +7,11 @@ import time
 
 import pytest
 
-from agentstack._internal.buffer import RingBuffer
-from agentstack._internal.transport import HttpTransport
-from agentstack.exporter import BatchSpanProcessor, get_processor, reset_processor
-from agentstack.models import SpanModel
-from agentstack.tracer import Span
+from oxly._internal.buffer import RingBuffer
+from oxly._internal.transport import HttpTransport
+from oxly.exporter import BatchSpanProcessor, get_processor, reset_processor
+from oxly.models import SpanModel
+from oxly.tracer import Span
 
 
 def test_ring_buffer_basic():
@@ -164,7 +164,7 @@ def test_get_processor_disabled():
     os.environ["AGENTSTACK_ENABLED"] = "false"
 
     reset_processor()
-    from agentstack.config import reset_config
+    from oxly.config import reset_config
     reset_config()
 
     processor = get_processor()

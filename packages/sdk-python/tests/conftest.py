@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Shared pytest fixtures for AgentStack SDK tests."""
@@ -9,12 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from agentstack.config import reset_config
-from agentstack.context import clear_context
-from agentstack.exporter import reset_processor
-from agentstack.local_store import LocalStore, reset_local_store
-from agentstack.models import SpanModel, SpanStatus
-from agentstack.tracer import Tracer
+from oxly.config import reset_config
+from oxly.context import clear_context
+from oxly.exporter import reset_processor
+from oxly.local_store import LocalStore, reset_local_store
+from oxly.models import SpanModel, SpanStatus
+from oxly.tracer import Tracer
 
 
 @pytest.fixture(autouse=True)

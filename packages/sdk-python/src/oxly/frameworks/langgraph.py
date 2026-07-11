@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """LangGraph auto-instrumentation via monkey-patching.
@@ -94,8 +94,8 @@ def _instrument_node(node_name: str, node_func: Callable) -> Callable:
         Wrapped function that creates spans.
     """
     import asyncio
-    from agentstack.context import span_context
-    from agentstack.tracer import Tracer
+    from oxly.context import span_context
+    from oxly.tracer import Tracer
 
     if asyncio.iscoroutinefunction(node_func):
         @functools.wraps(node_func)

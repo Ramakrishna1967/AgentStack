@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for the @observe decorator."""
@@ -7,9 +7,9 @@ import asyncio
 
 import pytest
 
-from agentstack.decorator import observe
-from agentstack.models import SpanStatus
-from agentstack.tracer import Tracer
+from oxly.decorator import observe
+from oxly.models import SpanStatus
+from oxly.tracer import Tracer
 
 
 def test_observe_sync_function():

@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """CrewAI auto-instrumentation (stub for future implementation).
@@ -38,8 +38,8 @@ def instrument() -> None:
 
         @functools.wraps(original_task_execute)
         def instrumented_task_execute(self: Any, *args: Any, **kwargs: Any) -> Any:
-            from agentstack.tracer import Tracer
-            from agentstack.context import span_context
+            from oxly.tracer import Tracer
+            from oxly.context import span_context
             
             # Create a span name, e.g. "crewai.task.write_a_post..."
             short_desc = self.description[:30].replace('\n', ' ').strip() + "..." if self.description else "unknown"
@@ -84,8 +84,8 @@ def instrument() -> None:
 
         @functools.wraps(original_agent_execute_task)
         def instrumented_agent_execute_task(self: Any, *args: Any, **kwargs: Any) -> Any:
-            from agentstack.tracer import Tracer
-            from agentstack.context import span_context
+            from oxly.tracer import Tracer
+            from oxly.context import span_context
             
             role = getattr(self, "role", "unknown")
             span_name = f"crewai.agent.{role}"

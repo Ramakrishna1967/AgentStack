@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Local SQLite storage for offline span persistence.
@@ -23,7 +23,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from agentstack.models import SpanModel
+from oxly.models import SpanModel
 
 logger = logging.getLogger("agentstack")
 

@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Thread-safe ring buffer for in-memory span batching.
@@ -53,7 +53,7 @@ class RingBuffer(Generic[T]):
         # Update metrics outside lock to avoid deadlock
         if overflow:
             try:
-                from agentstack.metrics import get_metrics
+                from oxly.metrics import get_metrics
                 metrics = get_metrics()
                 metrics.record_buffer_state(len(self._buffer), self._capacity, overflow=True)
             except ImportError:

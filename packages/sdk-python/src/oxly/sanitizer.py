@@ -1,4 +1,4 @@
-# Copyright 2026 AgentStack Contributors
+﻿# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """PII Sanitizer  regex-based scrubber that runs on all span attributes before export.
@@ -18,7 +18,7 @@ Detected PII types:
     - Generic API keys/tokens in common formats
 
 Usage:
-    from agentstack.sanitizer import scrub_pii
+    from oxly.sanitizer import scrub_pii
 
     clean = scrub_pii({"prompt": "My SSN is 123-45-6789"})
     # {"prompt": "My SSN is [REDACTED_SSN]"}
