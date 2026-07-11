@@ -68,7 +68,7 @@ export const ProjectSwitcher: React.FC = () => {
                     const project = projects.find((p) => p.id === e.target.value);
                     if (project) setCurrentProject(project);
                 }}
-                className="w-full px-3 py-2 bg-black border-2 border-[var(--border-primary)] rounded-none text-[var(--text-primary)] font-mono uppercase tracking-widest cursor-pointer hover:border-[var(--accent-green)] hover:text-[var(--accent-green)] transition-none outline-none appearance-none"
+                className="w-full px-3 py-2 bg-black border-2 border-[var(--border-subtle)] rounded-none text-[var(--text-primary)] font-mono uppercase tracking-widest cursor-pointer hover:border-[var(--accent-green)] hover:text-[var(--accent-green)] transition-none outline-none appearance-none"
                 style={{ width: "100%", background: "#000", border: "1px solid #1a1a1a", color: "#fff", fontSize: "11px", textTransform: "uppercase" }}
             >
                 <option value="" className="bg-black text-[var(--text-primary)]">SELECT_PROJECT</option>

@@ -17,7 +17,7 @@ interface TokenUsageChartProps {
 export const TokenUsageChart: React.FC<TokenUsageChartProps> = ({ data }) => {
     if (!data || data.length === 0) {
         return (
-            <div className="h-64 flex items-center justify-center text-[var(--text-tertiary)] bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-primary)]">
+            <div className="h-64 flex items-center justify-center text-[var(--text-muted)] bg-[var(--bg-card)] rounded-lg border border-[var(--border-subtle)]">
                 No token usage data available for this period.
             </div>
         );
@@ -36,7 +36,7 @@ export const TokenUsageChart: React.FC<TokenUsageChartProps> = ({ data }) => {
                         <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
                     </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                 <XAxis
                     dataKey="timestamp"
                     stroke="var(--text-secondary)"
@@ -44,7 +44,7 @@ export const TokenUsageChart: React.FC<TokenUsageChartProps> = ({ data }) => {
                 />
                 <YAxis stroke="var(--text-secondary)" />
                 <Tooltip
-                    contentStyle={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border-primary)" }}
+                    contentStyle={{ backgroundColor: "var(--bg-void)", borderColor: "var(--border-subtle)" }}
                     itemStyle={{ color: "var(--text-primary)" }}
                 />
                 <Legend />
