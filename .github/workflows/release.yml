@@ -58,20 +58,12 @@ jobs:
       with:
         images: |
           agentstack/api
-          agentstack/collector
-          
+
     - name: Build and push API image
       uses: docker/build-push-action@v5
       with:
-        context: ./packages/api
+        context: .
+        file: ./packages/api/Dockerfile
         push: true
         tags: agentstack/api:latest,agentstack/api:${{ github.ref_name }}
-        labels: ${{ steps.meta.outputs.labels }}
-        
-    - name: Build and push Collector image
-      uses: docker/build-push-action@v5
-      with:
-        context: ./packages/collector
-        push: true
-        tags: agentstack/collector:latest,agentstack/collector:${{ github.ref_name }}
         labels: ${{ steps.meta.outputs.labels }}
