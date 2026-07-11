@@ -13,7 +13,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6.svg?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![ClickHouse](https://img.shields.io/badge/ClickHouse-24.3-FFCC01.svg?style=flat-square&logo=clickhouse&logoColor=black)](https://clickhouse.com)
+[![SQLite](https://img.shields.io/badge/SQLite-3-003B57.svg?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/agentstack/agentstack/pulls)
 
 AgentStack gives you **real-time tracing, security analysis, cost tracking, and Time Machine replay** for AI agents — without changing how you build them.
@@ -26,7 +26,7 @@ Works with **LangGraph** &nbsp;&middot;&nbsp; **CrewAI** &nbsp;&middot;&nbsp; **
 [Why AgentStack](#why-agentstack) &nbsp;&bull;&nbsp;
 [Features](#features) &nbsp;&bull;&nbsp;
 [Architecture](#architecture) &nbsp;&bull;&nbsp;
-[Deployment](#deployment) &nbsp;&bull;&nbsp;
+[Running It](#running-it) &nbsp;&bull;&nbsp;
 [Contributing](#contributing)
 
 <br>
@@ -39,10 +39,15 @@ Works with **LangGraph** &nbsp;&middot;&nbsp; **CrewAI** &nbsp;&middot;&nbsp; **
 
 ## Get Started
 
-**1. Install the SDK**
+**1. Run the API** (see [Running It](#running-it) for the full walkthrough — no Docker, Redis, or ClickHouse required)
 
 ```bash
-pip install agentstate-sdk
+git clone https://github.com/ramakrishna1967/AgentStack
+cd AgentStack
+pip install -e packages/api
+export JWT_SECRET_KEY=$(openssl rand -hex 32)
+export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/agentstack.db"   # Windows; see Running It for Linux/Mac
+uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
 **2. Instrument your agent with one decorator**
@@ -51,8 +56,8 @@ pip install agentstate-sdk
 from agentstack import observe, init
 
 init(
-    collector_url="https://your-collector.example.com",
-    api_key="ak_your_project_key",
+    collector_url="http://localhost:8000",  # your running AgentStack API
+    api_key="ak_your_project_key",          # from POST /api/v1/projects — see Running It
 )
 
 @observe
@@ -65,7 +70,7 @@ async def async_agent(objective: str) -> list[str]:
     return await llm.achat(f"Break this into steps: {objective}")
 ```
 
-Every call now produces a full trace — arguments, return values, timing, exceptions, token counts, and cost — visible instantly in the dashboard.
+Every call now produces a full trace — arguments, return values, timing, exceptions, token counts, and cost — visible instantly in the dashboard at `http://localhost:8000`.
 
 > **Zero-interference guarantee.** The `@observe` decorator will never crash your application. If AgentStack encounters an internal error, your function executes normally and the SDK fails silently.
 
@@ -110,14 +115,14 @@ Step through any past agent execution span-by-span. See exactly which LLM calls 
 
 **Security Engine**
 
-Detect prompt injection, PII leakage, and anomalous behavior in real time. Security alerts (jailbreak patterns, token explosions, excessive latency) surface in the dashboard within seconds of occurring.
+Detect prompt injection, PII leakage, and anomalous behavior in real time. Alerts are written to SQLite and pushed over WebSocket to the dashboard within seconds of occurring.
 
 </td>
 <td width="50%" valign="top">
 
 **Automatic PII Sanitization**
 
-Every span is scrubbed before export. SSNs, credit card numbers, emails, phone numbers, AWS keys, and OpenAI keys are detected and redacted automatically — no config required.
+Every span is scrubbed before export. SSNs, credit card numbers, emails, phone numbers, AWS keys, OpenAI keys, and generic API tokens are detected and redacted automatically — no config required.
 
 </td>
 </tr>
@@ -142,14 +147,14 @@ Native hooks for **LangGraph**, **CrewAI**, and **AutoGen**. AgentStack detects 
 
 **Offline Resilience**
 
-If the collector is unreachable, spans are written to a local SQLite store and replayed automatically when connectivity is restored. No data is lost due to network failures.
+If the API is unreachable, spans are written to a local SQLite store on the SDK side and automatically retried every ~30 seconds once connectivity is restored. No data is lost due to network failures.
 
 </td>
 <td width="50%" valign="top">
 
 **Production Hardened**
 
-Non-root containers, JWT auth with brute-force lockout, SHA-256 API key caching, 5MB payload limits, CORS allowlists, per-IP rate limiting, and Bandit security scanning in CI.
+Non-root container user, JWT auth with brute-force lockout, SHA-256 API key caching, 5MB payload limits, CORS allowlists, per-IP rate limiting, and Bandit security scanning in CI.
 
 </td>
 </tr>
@@ -159,45 +164,52 @@ Non-root containers, JWT auth with brute-force lockout, SHA-256 API key caching,
 
 ## Architecture
 
+AgentStack runs as **one FastAPI process**. There is no message broker, no separate ingestion service, and no analytical database — everything downstream of your agent lives inside `packages/api`.
+
 ```
   Your Application
   ( @observe decorator )
          |
-         |  HTTPS  (gzip-compressed, exponential backoff retry)
+         |  HTTPS POST /v1/traces
+         |  (gzip-compressed, exponential backoff, local SQLite fallback if unreachable)
          v
-  +-------------------------------+
-  |   Collector   (FastAPI)       |   Validates API keys, enforces payload limits,
-  |   Port 4318                   |   and writes spans to Redis Streams
-  +---------------+---------------+
-                  |
-                  v  Redis Streams  (spans.ingest)
-                  |
-       +----------+----------+
-       |          |          |
-  ClickHouse  Security    Cost
-   Writer      Engine    Calculator
-       |          |          |
-       +----------+----------+
-                  |
-         ClickHouse (spans / security_alerts / cost_metrics)
-                  |
-          API Server (FastAPI)
-          REST + WebSocket + JWT
-                  |
-     Dashboard (React + TypeScript)
-     Traces | Analytics | Security
+  +--------------------------------------------------------------+
+  |                 AgentStack API  —  one process                |
+  |                                                                |
+  |   routes/ingest.py                                            |
+  |     validates the API key, enforces the 5MB payload limit,    |
+  |     puts each span onto an in-process asyncio.Queue           |
+  |            |                                                  |
+  |            v                                                  |
+  |   span_consumer.py  (drains the queue)                        |
+  |     - calculates per-model token cost                         |
+  |     - runs prompt-injection / PII / anomaly rules              |
+  |     - writes traces, spans, cost_metrics, security_alerts      |
+  |            |                              |                   |
+  |            v                              v                   |
+  |     SQLite (agentstack.db)         routes/ws.py broadcast()    |
+  |                                     — pushes new alerts to     |
+  |   retention.py                       every connected           |
+  |     daily sweep, deletes              WebSocket client         |
+  |     spans older than 90 days                                  |
+  |                                                                |
+  |   StaticFiles mount + SPA fallback                             |
+  |     serves the dashboard's built dist/ from this same process  |
+  +--------------------------------------------------------------+
+                               |
+                               v
+                Dashboard (React) — same origin, same port
+                Traces | Analytics | Security | Time Machine
 ```
 
 **Components at a glance:**
 
 | Package | Stack | Role |
 |---------|-------|------|
-| `packages/sdk-python` | Python 3.10+, Pydantic v2 | `@observe` decorator, context propagation, PII scrubber, batching, transport |
-| `packages/collector` | FastAPI, Redis | Ingestion endpoint — validates, authenticates, and streams spans |
-| `packages/workers` | Python, Redis Streams | Three independent processors: ClickHouse writer, security engine, cost calculator |
-| `packages/api` | FastAPI, SQLite, ClickHouse | REST API, WebSocket live feeds, JWT auth, trace replay |
-| `packages/dashboard` | React 19, TypeScript, Vite, Recharts | Real-time trace viewer, analytics, Time Machine, security alerts |
-| `deploy/` | Redis 7, ClickHouse 24.3, Nginx | Infrastructure configs, Docker Compose, health checks |
+| `packages/sdk-python` | Python 3.10+, Pydantic v2 | `@observe` decorator, context propagation, PII scrubber, batching, HTTP transport with local SQLite fallback |
+| `packages/api` | FastAPI, aiosqlite | Ingestion, in-process cost/security/storage processing, REST API, WebSocket live feeds, JWT auth, trace replay, dashboard static hosting |
+| `packages/dashboard` | React 19, TypeScript, Vite, Recharts | Trace viewer, analytics, Time Machine, security alerts — built to a static `dist/` and served by `packages/api` |
+| `deploy/` | Docker Compose | Optional single-container deployment of `packages/api` (with the dashboard's `dist/` baked in) |
 
 <br>
 
@@ -206,63 +218,200 @@ Non-root containers, JWT auth with brute-force lockout, SHA-256 API key caching,
 ```
 .
 ├── packages/
-│   ├── sdk-python/        # Python SDK (pip install agentstack-sdk)
-│   ├── collector/         # Trace ingestion server
-│   ├── workers/           # Background stream processors
-│   ├── api/               # REST API and WebSocket server
-│   └── dashboard/         # React frontend
+│   ├── sdk-python/            # Python SDK (pip install agentstate-sdk)
+│   │   └── src/agentstack/
+│   │       ├── decorator.py   # @observe
+│   │       ├── tracer.py      # Span / Tracer
+│   │       ├── exporter.py    # batching, retry, local SQLite fallback
+│   │       ├── sanitizer.py   # PII scrubbing
+│   │       ├── local_store.py # offline span storage
+│   │       ├── frameworks/    # langgraph.py, crewai.py, autogen.py
+│   │       └── _internal/     # transport.py, buffer.py, clock.py
+│   │
+│   ├── api/                   # The API — ingestion, processing, REST, WS, dashboard hosting
+│   │   └── src/api/
+│   │       ├── main.py            # app factory, lifespan, StaticFiles mount
+│   │       ├── span_consumer.py   # in-process cost/security/storage pipeline
+│   │       ├── retention.py       # daily 90-day span sweep
+│   │       ├── db.py              # aiosqlite connection manager + schema
+│   │       ├── cost.py            # per-model pricing
+│   │       ├── apikey_auth.py     # SDK-facing API key auth
+│   │       ├── rules/             # injection.py, pii.py, anomaly.py
+│   │       └── routes/            # ingest, traces, spans, security, analytics,
+│   │                               # projects, auth, health, ws
+│   │
+│   └── dashboard/             # React frontend
+│       └── src/
+│           ├── pages/          # Dashboard, TraceView, Analytics, Security, Metrics, Settings
+│           ├── hooks/          # useTraces, useWebSocket, useProject
+│           ├── components/
+│           └── lib/            # api.ts, types.ts, utils.ts
 │
 ├── deploy/
-│   ├── docker-compose.yml
-│   ├── nginx/
-│   ├── redis/
-│   └── clickhouse/
+│   ├── docker-compose.yml     # single `api` service
+│   └── .env.example
 │
-├── tests/                 # Integration tests
-├── examples/              # Example agent scripts
-├── .github/workflows/     # CI — lint, typecheck, bandit, build
+├── tests/integration/         # cross-package integration tests
+├── examples/                  # example agent scripts
+├── scripts/                   # benchmark/demo/seed scripts
+├── .github/workflows/         # CI — lint, typecheck, bandit, build
 ├── LICENSE
 └── README.md
 ```
 
 <br>
 
-## Deployment
+## Running It
 
-AgentStack is fully self-hostable. Deploy the complete stack with Docker Compose:
+No Docker, Redis, or ClickHouse required — the API is a single process backed by a SQLite file.
+
+**1. Install and configure**
 
 ```bash
 git clone https://github.com/ramakrishna1967/AgentStack
-cd agentstack
-
-# Copy and configure secrets
-cp .env.example .env
-
-# Start the full stack
-docker compose up -d
+cd AgentStack
+pip install -e packages/api
 ```
 
-The stack starts 8 containers: Redis, ClickHouse, Collector, API, three Workers, and the Dashboard — all with health checks and memory limits.
+Set the required environment variables. `DATABASE_URL` must point at an **absolute path** — the unset default resolves to a hardcoded `/app/agentstack.db`, which only exists inside the Docker image (see [Known Follow-ups](#known-follow-ups) below). The scheme prefix is `sqlite+aiosqlite:///` followed directly by your absolute path — on Windows that means no extra leading slash (the drive letter is the anchor); on Linux/Mac your path already starts with `/`, so it ends up looking like four slashes total:
 
-**Environment variables required:**
+```bash
+# Windows
+export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/agentstack.db"
 
-| Variable | Description |
-|----------|-------------|
-| `SECRET_KEY` | JWT signing secret — generate with `openssl rand -hex 32` |
-| `REDIS_PASSWORD` | Redis authentication password |
-| `CLICKHOUSE_PASSWORD` | ClickHouse database password |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins |
+# Linux / macOS
+export DATABASE_URL="sqlite+aiosqlite:////home/you/agentstack.db"
+```
 
-Once running, point the SDK at your collector:
+```bash
+export JWT_SECRET_KEY=$(openssl rand -hex 32)
+export ENVIRONMENT=development
+```
+
+**2. Start it**
+
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+The API, the dashboard (once built — see below), the WebSocket feed, and the ingestion endpoint are all now served from `http://localhost:8000`.
+
+**3. Serve the dashboard (optional)**
+
+`packages/api`'s `StaticFiles` mount only activates if a built dashboard is present. To build one:
+
+```bash
+cd packages/dashboard
+npm install && npm run build
+export DASHBOARD_DIST_DIR="$(pwd)/dist"   # set before starting uvicorn
+```
+
+Without this, the API still works fully — you just won't have the dashboard UI at `/`.
+
+**4. Create a project and get an API key**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "password": "a-strong-password-12+"}'
+
+TOKEN=$(curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "password": "a-strong-password-12+"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+curl -X POST http://localhost:8000/api/v1/projects \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name": "my-first-project"}'
+```
+
+The response includes an `api_key` (shown once) — this is what you pass to `agentstack.init(api_key=...)`.
+
+> Prefer to skip auth entirely for local exploration? Set `DEMO_MODE=true` — every read endpoint (traces, security alerts, analytics) works without a token. It does **not** currently work for creating new projects; see [Follow-ups](#known-follow-ups).
+
+**5. Point the SDK at it**
 
 ```python
-from agentstack import init
+import agentstack
 
-init(
-    collector_url="https://collector.yourdomain.com",
-    api_key="ak_your_key",
-)
+agentstack.init(collector_url="http://localhost:8000", api_key="ak_...")
+
+@agentstack.observe
+def my_agent(query: str) -> str:
+    return f"answer to: {query}"
+
+my_agent("hello")
 ```
+
+This entire flow — register, login, create project, send a trace, and read it back via `GET /api/v1/traces` — was verified end-to-end while writing this doc.
+
+<br>
+
+## Environment Variables
+
+**API** (`packages/api`, read by `api/config.py` unless noted):
+
+| Variable | Default | Description |
+|----------|---------|--------------|
+| `JWT_SECRET_KEY` | *(none — auto-generated with a warning in `development`, fatal in any other environment)* | JWT signing secret |
+| `ALGORITHM` | `HS256` | JWT signing algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (24h) | JWT expiry |
+| `DATABASE_URL` | `agentstack.db` (resolves to `/app/agentstack.db` — see caveat above) | SQLite connection string — must be an absolute path (`sqlite+aiosqlite:///C:/...` on Windows, `sqlite+aiosqlite:////...` on Linux/Mac) |
+| `ENVIRONMENT` | `development` | `development` relaxes the secret-key gate; anything else enforces it |
+| `DEMO_MODE` | `false` | Bypasses JWT auth on read endpoints with a synthetic `demo` user |
+| `CORS_ORIGINS` | `http://localhost,http://127.0.0.1,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:80` | Comma-separated allowed origins (read directly via `os.getenv`, not part of `Settings`) |
+| `DASHBOARD_DIST_DIR` | `<api package dir>/static` | Where `main.py` looks for the dashboard's built `dist/` |
+
+**SDK** (`packages/sdk-python`, read by `agentstack/config.py`, all prefixed `AGENTSTACK_`):
+
+| Variable | Default | Description |
+|----------|---------|--------------|
+| `AGENTSTACK_COLLECTOR_URL` | `http://localhost:8000` | Base URL of your running AgentStack API |
+| `AGENTSTACK_API_KEY` | *(empty)* | API key from `POST /api/v1/projects` |
+| `AGENTSTACK_ENABLED` | `true` | Master on/off switch |
+| `AGENTSTACK_BATCH_SIZE` | `64` | Max spans per export batch |
+| `AGENTSTACK_EXPORT_INTERVAL` | `5000` | Max ms before a partial batch flushes |
+| `AGENTSTACK_MAX_QUEUE_SIZE` | `2048` | In-memory ring buffer capacity |
+| `AGENTSTACK_LOG_LEVEL` | `INFO` | Python logging level |
+| `AGENTSTACK_DEBUG` | `false` | Verbose stderr logging |
+| `AGENTSTACK_SERVICE_NAME` | `default` | Tagged on all spans |
+| `AGENTSTACK_PROJECT_ID` | `default` | Cosmetic — the API derives the real project from your API key regardless |
+
+**Dashboard** (`packages/dashboard`, build-time Vite vars):
+
+| Variable | Default | Description |
+|----------|---------|--------------|
+| `VITE_API_URL` | *(empty — same-origin)* | Only needed for standalone `npm run dev` against a separately running API |
+| `VITE_WS_URL` | derived from `window.location` | Same — only needed for standalone dev |
+
+<br>
+
+## Migration History
+
+AgentStack originally ran as an 8-container stack: Redis Streams for ingestion, ClickHouse for storage, a standalone Collector service, three independent Workers (ClickHouse writer, security engine, cost calculator), the API, the Dashboard, and an Nginx gateway in front of all of it.
+
+That infrastructure has since been folded entirely into `packages/api`:
+
+- Ingestion moved from a Redis Stream to an in-process `asyncio.Queue`.
+- Cost calculation, security rules, and storage moved from three separate Worker processes into one in-process consumer (`span_consumer.py`).
+- Storage moved from ClickHouse to SQLite (`aiosqlite`).
+- Live alert delivery moved from a Redis Stream consumer to a direct WebSocket broadcast call.
+- The dashboard is now built to a static `dist/` and served by the API itself via `StaticFiles`, rather than by its own Nginx container behind a gateway.
+- A daily in-process sweep replaces ClickHouse's TTL for the 90-day span retention policy.
+
+The result is the single-process architecture described above — the same features, running as one FastAPI app with no external infrastructure dependency.
+
+<br>
+
+## Known Follow-ups
+
+Documenting these here rather than letting them go unnoticed:
+
+- **`DATABASE_URL` non-Docker default is broken.** `api/db.py`'s path parser hardcodes `/app/` for the unset default, and for any value that isn't recognized as an absolute path. Two things to watch here: (1) always pass an absolute path, per [Running It](#running-it) above; (2) the parser's "four-slash" branch (`Path("/" + remainder)`) is written for POSIX paths — on Windows, a four-slash value whose remainder includes a drive letter (e.g. `////C:/Users/you/agentstack.db`) resolves to `/C:/Users/you/agentstack.db`, which SQLite cannot open. On Windows, use three slashes with the drive letter directly after (`sqlite+aiosqlite:///C:/Users/you/agentstack.db`) — confirmed working; the four-slash form is for Linux/Mac.
+- **`DEMO_MODE` + create-project 500s.** The synthetic `demo` user has no row in the `users` table, so `POST /api/v1/projects` fails its foreign-key insert into `user_projects` when running under `DEMO_MODE`. Read endpoints are unaffected. Use real registration (documented above) to create projects.
+- **Dashboard system-health widget** (`packages/dashboard/src/pages/Dashboard.tsx`, `lib/types.ts`) still renders "Collector API" / "Redis Stream" / "ClickHouse DB" tiles that no longer correspond to anything the API's `/api/v1/health` returns.
+- **CI** (`.github/workflows/ci.yml`) still has a leftover `pip install -e ./packages/collector || true` step for a package that no longer exists (tolerant of failure, but dead).
 
 <br>
 
@@ -270,13 +419,13 @@ init(
 
 | Layer | Details |
 |-------|---------|
-| **Containers** | All images run as non-root `appuser` |
+| **Containers** | The API image runs as non-root `appuser` |
 | **Secrets** | Environment variables only; `.env` is gitignored |
 | **Auth** | JWT (24h expiry) + pbkdf2_sha256 password hashing |
 | **API Keys** | SHA-256 cache on hot path; pbkdf2 on first use |
 | **Brute force** | 5 failed logins per email per 15 minutes triggers lockout |
 | **Rate limiting** | 100 requests/minute per IP |
-| **CORS** | Explicit allowlist; credentials disabled on Collector |
+| **CORS** | Explicit allowlist via `CORS_ORIGINS` |
 | **Payloads** | 5MB limit enforced on actual request body |
 | **CI scanning** | Bandit static analysis on every PR |
 | **PII** | Scrubbed from every span before storage |
@@ -292,6 +441,12 @@ Contributions are welcome — from bug reports and docs improvements to new fram
 **Development setup:**
 
 ```bash
+# API
+cd packages/api
+pip install -e ".[dev]"
+pytest        # Run tests
+uvicorn api.main:app --reload   # Run locally, see "Running It" above for env vars
+
 # Python SDK
 cd packages/sdk-python
 pip install -e ".[dev]"
@@ -304,7 +459,7 @@ npm install
 npm run dev    # Dev server with hot reload
 npm run build  # Production build + TypeScript check
 
-# Full stack
+# Or run the API in a single container (dashboard dist baked in at build time)
 cd deploy
 docker compose up -d
 ```
