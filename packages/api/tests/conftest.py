@@ -78,13 +78,13 @@ async def auth_headers(client):
     # Register
     await client.post(
         "/api/v1/auth/register",
-        json={"email": "test@oxly.dev", "password": "testpassword123"},
+        json={"email": "test@oxly.dev", "password": "TestPassword123"},
     )
 
     # Login
     response = await client.post(
         "/api/v1/auth/login",
-        json={"email": "test@oxly.dev", "password": "testpassword123"},
+        json={"email": "test@oxly.dev", "password": "TestPassword123"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

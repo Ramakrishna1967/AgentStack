@@ -34,7 +34,7 @@ class TestAuth:
     async def test_register_user(self, client):
         response = await client.post(
             "/api/v1/auth/register",
-            json={"email": "newuser@test.com", "password": "password123"},
+            json={"email": "newuser@test.com", "password": "TestPassword123"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -45,11 +45,11 @@ class TestAuth:
     async def test_register_duplicate_email(self, client):
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "dup@test.com", "password": "password123"},
+            json={"email": "dup@test.com", "password": "TestPassword123"},
         )
         response = await client.post(
             "/api/v1/auth/register",
-            json={"email": "dup@test.com", "password": "password456"},
+            json={"email": "dup@test.com", "password": "TestPassword456"},
         )
         assert response.status_code == 400
 
@@ -57,11 +57,11 @@ class TestAuth:
     async def test_login_success(self, client):
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "login@test.com", "password": "password123"},
+            json={"email": "login@test.com", "password": "TestPassword123"},
         )
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "login@test.com", "password": "password123"},
+            json={"email": "login@test.com", "password": "TestPassword123"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -72,7 +72,7 @@ class TestAuth:
     async def test_login_wrong_password(self, client):
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "wrong@test.com", "password": "password123"},
+            json={"email": "wrong@test.com", "password": "TestPassword123"},
         )
         response = await client.post(
             "/api/v1/auth/login",
