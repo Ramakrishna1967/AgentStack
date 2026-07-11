@@ -33,47 +33,10 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING
 
 from oxly.config import OxlyConfig, get_config, reset_config
+from oxly.decorator import observe
 from oxly.tracer import Span, Tracer
-
-# Lazy import to avoid circular dependency  decorator is built in Step 2
-# For now, provide a placeholder that gets replaced on first access.
-_observe_func = None
-
-
-def observe(func=None, *, name: str | None = None):
-    """Decorator to instrument a function for observability.
-
-    Creates a Span for each function call, capturing arguments, return values,
-    exceptions, and timing. Works on both sync and async functions.
-
-    Usage:
-        @observe
-        def my_function(x):
-            return x * 2
-
-        @observe(name="custom_name")
-        async def my_async_function(x):
-            return await some_async_call(x)
-
-    Args:
-        func: The function to decorate (when used without parentheses).
-        name: Optional custom span name. Defaults to the function's __name__.
-    """
-    try:
-        from oxly.decorator import observe as _obs
-
-        return _obs(func, name=name)
-    except ImportError:
-        # decorator.py not yet created (Step 2)  return function unmodified
-        if func is not None:
-            return func
-        # Called with arguments: @observe(name="x")  return identity decorator
-        def _identity(f):
-            return f
-        return _identity
 
 
 def init(
