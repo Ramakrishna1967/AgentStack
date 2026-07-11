@@ -243,7 +243,7 @@ Oxly runs as **one FastAPI process**. There is no message broker, no separate in
 │   └── dashboard/             # React frontend
 │       └── src/
 │           ├── pages/          # Dashboard, TraceView, Analytics, Security, Metrics, Settings
-│           ├── hooks/          # useTraces, useWebSocket, useProject
+│           ├── hooks/          # useTraces
 │           ├── components/
 │           └── lib/            # api.ts, types.ts, utils.ts
 │
@@ -411,7 +411,6 @@ Documenting these here rather than letting them go unnoticed:
 - **`DATABASE_URL` non-Docker default is broken.** `api/db.py`'s path parser hardcodes `/app/` for the unset default, and for any value that isn't recognized as an absolute path. Two things to watch here: (1) always pass an absolute path, per [Running It](#running-it) above; (2) the parser's "four-slash" branch (`Path("/" + remainder)`) is written for POSIX paths — on Windows, a four-slash value whose remainder includes a drive letter (e.g. `////C:/Users/you/oxly.db`) resolves to `/C:/Users/you/oxly.db`, which SQLite cannot open. On Windows, use three slashes with the drive letter directly after (`sqlite+aiosqlite:///C:/Users/you/oxly.db`) — confirmed working; the four-slash form is for Linux/Mac.
 - **`DEMO_MODE` + create-project 500s.** The synthetic `demo` user has no row in the `users` table, so `POST /api/v1/projects` fails its foreign-key insert into `user_projects` when running under `DEMO_MODE`. Read endpoints are unaffected. Use real registration (documented above) to create projects.
 - **Dashboard system-health widget** (`packages/dashboard/src/pages/Dashboard.tsx`, `lib/types.ts`) still renders "Collector API" / "Redis Stream" / "ClickHouse DB" tiles that no longer correspond to anything the API's `/api/v1/health` returns.
-- **CI** (`.github/workflows/ci.yml`) still has a leftover `pip install -e ./packages/collector || true` step for a package that no longer exists (tolerant of failure, but dead).
 
 <br>
 
