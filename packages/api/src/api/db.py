@@ -23,8 +23,8 @@ import os
 def _get_default_db_path() -> Path:
     db_url = settings.DATABASE_URL
     if db_url.startswith("sqlite"):
-        # Handle sqlite+aiosqlite:///data/agentstack.db (relative) 
-        # or sqlite+aiosqlite:////data/agentstack.db (absolute)
+        # Handle sqlite+aiosqlite:///data/oxly.db (relative) 
+        # or sqlite+aiosqlite:////data/oxly.db (absolute)
         if "////" in db_url:
             return Path("/" + db_url.split("////")[-1])
         elif "///" in db_url:
@@ -32,7 +32,7 @@ def _get_default_db_path() -> Path:
             if path_str.startswith("/"):
                 return Path(path_str)
             return Path("/app") / path_str # Force absolute to /app if relative
-    return Path("/app/agentstack.db")
+    return Path("/app/oxly.db")
 
 _DEFAULT_DB_PATH = _get_default_db_path()
 

@@ -1,10 +1,10 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Local SQLite storage for offline span persistence.
 
 When the Collector is unreachable (network down, server crashed), the SDK
-falls back to storing spans in a local SQLite database (.agentstack.db).
+falls back to storing spans in a local SQLite database (.oxly.db).
 When connectivity is restored, the BatchSpanProcessor replays unsent spans.
 
 This module also provides JSON export for debugging / manual inspection.
@@ -28,7 +28,7 @@ from oxly.models import SpanModel
 logger = logging.getLogger("agentstack")
 
 # Default database file location
-_DEFAULT_DB_NAME = ".agentstack.db"
+_DEFAULT_DB_NAME = ".oxly.db"
 
 
 class LocalStore:
@@ -38,7 +38,7 @@ class LocalStore:
     Spans can be replayed when connectivity is restored.
 
     Args:
-        db_path: Path to the SQLite database file. Defaults to .agentstack.db
+        db_path: Path to the SQLite database file. Defaults to .oxly.db
                  in the current working directory.
     """
 

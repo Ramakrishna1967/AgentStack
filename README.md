@@ -46,7 +46,7 @@ git clone https://github.com/ramakrishna1967/AgentStack
 cd AgentStack
 pip install -e packages/api
 export JWT_SECRET_KEY=$(openssl rand -hex 32)
-export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/agentstack.db"   # Windows; see Running It for Linux/Mac
+export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/oxly.db"   # Windows; see Running It for Linux/Mac
 uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -187,7 +187,7 @@ AgentStack runs as **one FastAPI process**. There is no message broker, no separ
   |     - writes traces, spans, cost_metrics, security_alerts      |
   |            |                              |                   |
   |            v                              v                   |
-  |     SQLite (agentstack.db)         routes/ws.py broadcast()    |
+  |     SQLite (oxly.db)         routes/ws.py broadcast()    |
   |                                     — pushes new alerts to     |
   |   retention.py                       every connected           |
   |     daily sweep, deletes              WebSocket client         |
@@ -273,14 +273,14 @@ cd AgentStack
 pip install -e packages/api
 ```
 
-Set the required environment variables. `DATABASE_URL` must point at an **absolute path** — the unset default resolves to a hardcoded `/app/agentstack.db`, which only exists inside the Docker image (see [Known Follow-ups](#known-follow-ups) below). The scheme prefix is `sqlite+aiosqlite:///` followed directly by your absolute path — on Windows that means no extra leading slash (the drive letter is the anchor); on Linux/Mac your path already starts with `/`, so it ends up looking like four slashes total:
+Set the required environment variables. `DATABASE_URL` must point at an **absolute path** — the unset default resolves to a hardcoded `/app/oxly.db`, which only exists inside the Docker image (see [Known Follow-ups](#known-follow-ups) below). The scheme prefix is `sqlite+aiosqlite:///` followed directly by your absolute path — on Windows that means no extra leading slash (the drive letter is the anchor); on Linux/Mac your path already starts with `/`, so it ends up looking like four slashes total:
 
 ```bash
 # Windows
-export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/agentstack.db"
+export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/oxly.db"
 
 # Linux / macOS
-export DATABASE_URL="sqlite+aiosqlite:////home/you/agentstack.db"
+export DATABASE_URL="sqlite+aiosqlite:////home/you/oxly.db"
 ```
 
 ```bash
@@ -357,7 +357,7 @@ This entire flow — register, login, create project, send a trace, and read it 
 | `JWT_SECRET_KEY` | *(none — auto-generated with a warning in `development`, fatal in any other environment)* | JWT signing secret |
 | `ALGORITHM` | `HS256` | JWT signing algorithm |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (24h) | JWT expiry |
-| `DATABASE_URL` | `agentstack.db` (resolves to `/app/agentstack.db` — see caveat above) | SQLite connection string — must be an absolute path (`sqlite+aiosqlite:///C:/...` on Windows, `sqlite+aiosqlite:////...` on Linux/Mac) |
+| `DATABASE_URL` | `oxly.db` (resolves to `/app/oxly.db` — see caveat above) | SQLite connection string — must be an absolute path (`sqlite+aiosqlite:///C:/...` on Windows, `sqlite+aiosqlite:////...` on Linux/Mac) |
 | `ENVIRONMENT` | `development` | `development` relaxes the secret-key gate; anything else enforces it |
 | `DEMO_MODE` | `false` | Bypasses JWT auth on read endpoints with a synthetic `demo` user |
 | `CORS_ORIGINS` | `http://localhost,http://127.0.0.1,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:80` | Comma-separated allowed origins (read directly via `os.getenv`, not part of `Settings`) |
@@ -408,7 +408,7 @@ The result is the single-process architecture described above — the same featu
 
 Documenting these here rather than letting them go unnoticed:
 
-- **`DATABASE_URL` non-Docker default is broken.** `api/db.py`'s path parser hardcodes `/app/` for the unset default, and for any value that isn't recognized as an absolute path. Two things to watch here: (1) always pass an absolute path, per [Running It](#running-it) above; (2) the parser's "four-slash" branch (`Path("/" + remainder)`) is written for POSIX paths — on Windows, a four-slash value whose remainder includes a drive letter (e.g. `////C:/Users/you/agentstack.db`) resolves to `/C:/Users/you/agentstack.db`, which SQLite cannot open. On Windows, use three slashes with the drive letter directly after (`sqlite+aiosqlite:///C:/Users/you/agentstack.db`) — confirmed working; the four-slash form is for Linux/Mac.
+- **`DATABASE_URL` non-Docker default is broken.** `api/db.py`'s path parser hardcodes `/app/` for the unset default, and for any value that isn't recognized as an absolute path. Two things to watch here: (1) always pass an absolute path, per [Running It](#running-it) above; (2) the parser's "four-slash" branch (`Path("/" + remainder)`) is written for POSIX paths — on Windows, a four-slash value whose remainder includes a drive letter (e.g. `////C:/Users/you/oxly.db`) resolves to `/C:/Users/you/oxly.db`, which SQLite cannot open. On Windows, use three slashes with the drive letter directly after (`sqlite+aiosqlite:///C:/Users/you/oxly.db`) — confirmed working; the four-slash form is for Linux/Mac.
 - **`DEMO_MODE` + create-project 500s.** The synthetic `demo` user has no row in the `users` table, so `POST /api/v1/projects` fails its foreign-key insert into `user_projects` when running under `DEMO_MODE`. Read endpoints are unaffected. Use real registration (documented above) to create projects.
 - **Dashboard system-health widget** (`packages/dashboard/src/pages/Dashboard.tsx`, `lib/types.ts`) still renders "Collector API" / "Redis Stream" / "ClickHouse DB" tiles that no longer correspond to anything the API's `/api/v1/health` returns.
 - **CI** (`.github/workflows/ci.yml`) still has a leftover `pip install -e ./packages/collector || true` step for a package that no longer exists (tolerant of failure, but dead).

@@ -45,7 +45,7 @@ def reset_db():
 @pytest_asyncio.fixture
 async def test_db(tmp_path):
     """Create a fresh test database."""
-    db_path = tmp_path / "test_agentstack.db"
+    db_path = tmp_path / "test_oxly.db"
     db = Database(str(db_path))
     await db.init_db()
     return db

@@ -49,7 +49,7 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
-.agentstack.db
+.oxly.db
 
 # ── OS files ──────────────────────────────────────────────────────────
 .DS_Store

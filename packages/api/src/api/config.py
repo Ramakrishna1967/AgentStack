@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day (reduced from 7)
 
     # Database
-    DATABASE_URL: str = "agentstack.db"
+    DATABASE_URL: str = "oxly.db"
 
     # Environment
     ENVIRONMENT: str = "development"

@@ -9,7 +9,7 @@ services:
     container_name: agentstack-api
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:////data/agentstack.db
+      - DATABASE_URL=sqlite+aiosqlite:////data/oxly.db
       - JWT_SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - DEMO_MODE=${DEMO_MODE:-False}
