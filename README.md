@@ -2,7 +2,7 @@
 
 <br>
 
-# Agentstack
+# Oxly
 
 ### The open-source observability platform for AI agents
 
@@ -14,16 +14,16 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57.svg?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/agentstack/agentstack/pulls)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/oxly/oxly/pulls)
 
-AgentStack gives you **real-time tracing, security analysis, cost tracking, and Time Machine replay** for AI agents — without changing how you build them.
+Oxly gives you **real-time tracing, security analysis, cost tracking, and Time Machine replay** for AI agents — without changing how you build them.
 
 Works with **LangGraph** &nbsp;&middot;&nbsp; **CrewAI** &nbsp;&middot;&nbsp; **AutoGen** &nbsp;&middot;&nbsp; **Custom Python**
 
 <br>
 
 [Get Started](#get-started) &nbsp;&bull;&nbsp;
-[Why AgentStack](#why-agentstack) &nbsp;&bull;&nbsp;
+[Why Oxly](#why-oxly) &nbsp;&bull;&nbsp;
 [Features](#features) &nbsp;&bull;&nbsp;
 [Architecture](#architecture) &nbsp;&bull;&nbsp;
 [Running It](#running-it) &nbsp;&bull;&nbsp;
@@ -42,8 +42,8 @@ Works with **LangGraph** &nbsp;&middot;&nbsp; **CrewAI** &nbsp;&middot;&nbsp; **
 **1. Run the API** (see [Running It](#running-it) for the full walkthrough — no Docker, Redis, or ClickHouse required)
 
 ```bash
-git clone https://github.com/ramakrishna1967/AgentStack
-cd AgentStack
+git clone https://github.com/ramakrishna1967/Oxly
+cd Oxly
 pip install -e packages/api
 export JWT_SECRET_KEY=$(openssl rand -hex 32)
 export DATABASE_URL="sqlite+aiosqlite:///C:/Users/you/oxly.db"   # Windows; see Running It for Linux/Mac
@@ -53,10 +53,10 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 **2. Instrument your agent with one decorator**
 
 ```python
-from agentstack import observe, init
+from oxly import observe, init
 
 init(
-    collector_url="http://localhost:8000",  # your running AgentStack API
+    collector_url="http://localhost:8000",  # your running Oxly API
     api_key="ak_your_project_key",          # from POST /api/v1/projects — see Running It
 )
 
@@ -72,15 +72,15 @@ async def async_agent(objective: str) -> list[str]:
 
 Every call now produces a full trace — arguments, return values, timing, exceptions, token counts, and cost — visible instantly in the dashboard at `http://localhost:8000`.
 
-> **Zero-interference guarantee.** The `@observe` decorator will never crash your application. If AgentStack encounters an internal error, your function executes normally and the SDK fails silently.
+> **Zero-interference guarantee.** The `@observe` decorator will never crash your application. If Oxly encounters an internal error, your function executes normally and the SDK fails silently.
 
 <br>
 
-## Why AgentStack
+## Why Oxly
 
 Most observability tools are designed for web services. AI agents have fundamentally different requirements:
 
-| Challenge | Web Services | AI Agents | AgentStack |
+| Challenge | Web Services | AI Agents | Oxly |
 |-----------|:---:|:---:|---|
 | **Request duration** | Milliseconds | Minutes to hours | Durable traces with offline fallback |
 | **Cost** | Fixed infra | Variable per-token billing | Per-model cost tracking with timeseries |
@@ -138,7 +138,7 @@ Per-model token counting and USD cost calculation with timeseries charts. Track 
 
 **Framework Auto-Detection**
 
-Native hooks for **LangGraph**, **CrewAI**, and **AutoGen**. AgentStack detects your framework at import time and instruments the right entry points automatically.
+Native hooks for **LangGraph**, **CrewAI**, and **AutoGen**. Oxly detects your framework at import time and instruments the right entry points automatically.
 
 </td>
 </tr>
@@ -164,7 +164,7 @@ Non-root container user, JWT auth with brute-force lockout, SHA-256 API key cach
 
 ## Architecture
 
-AgentStack runs as **one FastAPI process**. There is no message broker, no separate ingestion service, and no analytical database — everything downstream of your agent lives inside `packages/api`.
+Oxly runs as **one FastAPI process**. There is no message broker, no separate ingestion service, and no analytical database — everything downstream of your agent lives inside `packages/api`.
 
 ```
   Your Application
@@ -174,7 +174,7 @@ AgentStack runs as **one FastAPI process**. There is no message broker, no separ
          |  (gzip-compressed, exponential backoff, local SQLite fallback if unreachable)
          v
   +--------------------------------------------------------------+
-  |                 AgentStack API  —  one process                |
+  |                 Oxly API  —  one process                |
   |                                                                |
   |   routes/ingest.py                                            |
   |     validates the API key, enforces the 5MB payload limit,    |
@@ -219,7 +219,7 @@ AgentStack runs as **one FastAPI process**. There is no message broker, no separ
 .
 ├── packages/
 │   ├── sdk-python/            # Python SDK (pip install agentstate-sdk)
-│   │   └── src/agentstack/
+│   │   └── src/oxly/
 │   │       ├── decorator.py   # @observe
 │   │       ├── tracer.py      # Span / Tracer
 │   │       ├── exporter.py    # batching, retry, local SQLite fallback
@@ -268,8 +268,8 @@ No Docker, Redis, or ClickHouse required — the API is a single process backed 
 **1. Install and configure**
 
 ```bash
-git clone https://github.com/ramakrishna1967/AgentStack
-cd AgentStack
+git clone https://github.com/ramakrishna1967/Oxly
+cd Oxly
 pip install -e packages/api
 ```
 
@@ -326,18 +326,18 @@ curl -X POST http://localhost:8000/api/v1/projects \
   -d '{"name": "my-first-project"}'
 ```
 
-The response includes an `api_key` (shown once) — this is what you pass to `agentstack.init(api_key=...)`.
+The response includes an `api_key` (shown once) — this is what you pass to `oxly.init(api_key=...)`.
 
 > Prefer to skip auth entirely for local exploration? Set `DEMO_MODE=true` — every read endpoint (traces, security alerts, analytics) works without a token. It does **not** currently work for creating new projects; see [Follow-ups](#known-follow-ups).
 
 **5. Point the SDK at it**
 
 ```python
-import agentstack
+import oxly
 
-agentstack.init(collector_url="http://localhost:8000", api_key="ak_...")
+oxly.init(collector_url="http://localhost:8000", api_key="ak_...")
 
-@agentstack.observe
+@oxly.observe
 def my_agent(query: str) -> str:
     return f"answer to: {query}"
 
@@ -363,11 +363,11 @@ This entire flow — register, login, create project, send a trace, and read it 
 | `CORS_ORIGINS` | `http://localhost,http://127.0.0.1,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:80` | Comma-separated allowed origins (read directly via `os.getenv`, not part of `Settings`) |
 | `DASHBOARD_DIST_DIR` | `<api package dir>/static` | Where `main.py` looks for the dashboard's built `dist/` |
 
-**SDK** (`packages/sdk-python`, read by `agentstack/config.py`, all prefixed `OXLY_`):
+**SDK** (`packages/sdk-python`, read by `oxly/config.py`, all prefixed `OXLY_`):
 
 | Variable | Default | Description |
 |----------|---------|--------------|
-| `OXLY_COLLECTOR_URL` | `http://localhost:8000` | Base URL of your running AgentStack API |
+| `OXLY_COLLECTOR_URL` | `http://localhost:8000` | Base URL of your running Oxly API |
 | `OXLY_API_KEY` | *(empty)* | API key from `POST /api/v1/projects` |
 | `OXLY_ENABLED` | `true` | Master on/off switch |
 | `OXLY_BATCH_SIZE` | `64` | Max spans per export batch |
@@ -389,7 +389,7 @@ This entire flow — register, login, create project, send a trace, and read it 
 
 ## Migration History
 
-AgentStack originally ran as an 8-container stack: Redis Streams for ingestion, ClickHouse for storage, a standalone Collector service, three independent Workers (ClickHouse writer, security engine, cost calculator), the API, the Dashboard, and an Nginx gateway in front of all of it.
+Oxly originally ran as an 8-container stack: Redis Streams for ingestion, ClickHouse for storage, a standalone Collector service, three independent Workers (ClickHouse writer, security engine, cost calculator), the API, the Dashboard, and an Nginx gateway in front of all of it.
 
 That infrastructure has since been folded entirely into `packages/api`:
 
@@ -430,7 +430,7 @@ Documenting these here rather than letting them go unnoticed:
 | **CI scanning** | Bandit static analysis on every PR |
 | **PII** | Scrubbed from every span before storage |
 
-To report a security vulnerability, please open a [GitHub Security Advisory](https://github.com/agentstack/agentstack/security/advisories/new) rather than a public issue.
+To report a security vulnerability, please open a [GitHub Security Advisory](https://github.com/oxly/oxly/security/advisories/new) rather than a public issue.
 
 <br>
 
@@ -472,12 +472,12 @@ Please open an issue before starting on significant changes so we can discuss th
 
 Apache 2.0 — see [LICENSE](LICENSE) for details.
 
-Copyright 2026 AgentStack Contributors.
+Copyright 2026 Oxly Contributors.
 
 ---
 
 <div align="center">
 <br>
-If AgentStack is useful to you, please consider giving it a star. It helps others find the project.
+If Oxly is useful to you, please consider giving it a star. It helps others find the project.
 <br><br>
 </div>

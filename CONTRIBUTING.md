@@ -1,4 +1,4 @@
-# Contributing to AgentStack
+# Contributing to Oxly
 
 ## Getting Started
 
@@ -53,7 +53,7 @@ cd packages/dashboard && npm test
 ## Reporting Bugs
 
 Open a GitHub issue with:
-- AgentStack version
+- Oxly version
 - Python version
 - Minimal reproduction steps
 - Expected vs actual behavior
