@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """BatchSpanProcessor  collects spans and exports them in batches.
@@ -34,7 +34,7 @@ from oxly.local_store import LocalStore, get_local_store
 if TYPE_CHECKING:
     from oxly.tracer import Span
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 
 class BatchSpanProcessor:
@@ -89,7 +89,7 @@ class BatchSpanProcessor:
             self._started = True
             self._thread = threading.Thread(
                 target=self._export_loop,
-                name="agentstack-exporter",
+                name="oxly-exporter",
                 daemon=True,
             )
             self._thread.start()

@@ -23,7 +23,7 @@ from fastapi.responses import JSONResponse
 
 from api.apikey_auth import verify_api_key
 
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 router = APIRouter()
 

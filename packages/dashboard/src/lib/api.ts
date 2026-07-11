@@ -21,7 +21,7 @@ export const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("agentstack_token");
+        const token = localStorage.getItem("oxly_token");
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -36,7 +36,7 @@ apiClient.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Unauthorized - clear token and redirect to login
-            localStorage.removeItem("agentstack_token");
+            localStorage.removeItem("oxly_token");
             window.location.href = "/login";
         }
         return Promise.reject(error);

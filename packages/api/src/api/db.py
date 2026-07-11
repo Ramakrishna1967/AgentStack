@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import AsyncGenerator
 
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 # Default database location logic
 from api.config import settings

@@ -24,7 +24,7 @@ from api.schemas import (
 )
 
 router = APIRouter()
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 # --- HIGH-2 + LOW-1: Rate limiter & lockout ---
 _MAX_LOGIN_ATTEMPTS = 5

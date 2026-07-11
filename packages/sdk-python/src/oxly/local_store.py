@@ -25,7 +25,7 @@ from typing import Any
 
 from oxly.models import SpanModel
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 # Default database file location
 _DEFAULT_DB_NAME = ".oxly.db"

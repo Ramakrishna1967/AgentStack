@@ -18,7 +18,7 @@ from fastapi import FastAPI
 
 from api.db import get_database
 
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 SPAN_RETENTION_DAYS = 90
 SWEEP_INTERVAL_SECONDS = 24 * 60 * 60

@@ -13,7 +13,7 @@ from typing import Set
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 # Connected WebSocket clients
 _connections: Set[WebSocket] = set()

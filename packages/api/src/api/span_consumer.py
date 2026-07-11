@@ -23,7 +23,7 @@ from api.cost import calculate_cost
 from api.db import get_database
 from api.rules import anomaly, injection, pii
 
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 
 def _extract_text(span: dict) -> str:

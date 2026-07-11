@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """@observe decorator  the primary developer-facing API of AgentStack.
@@ -34,7 +34,7 @@ from oxly.context import span_context
 from oxly.models import SpanStatus
 from oxly.tracer import Tracer
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 F = TypeVar("F", bound=Callable[..., Any])
 

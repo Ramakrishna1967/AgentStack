@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Framework auto-detection and instrumentation.
@@ -16,7 +16,7 @@ import logging
 import sys
 from typing import Any
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 
 def detect_frameworks() -> dict[str, bool]:

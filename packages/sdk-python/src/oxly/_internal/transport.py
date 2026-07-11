@@ -23,7 +23,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 # Default retry configuration
 _MAX_RETRIES = 3
@@ -129,7 +129,7 @@ class HttpTransport:
                         "Content-Type": "application/json",
                         "Content-Encoding": "gzip",
                         "X-API-Key": self._api_key,
-                        "User-Agent": "agentstack-sdk/0.1.0",
+                        "User-Agent": "oxly-sdk/0.1.0",
                     },
                     method="POST",
                 )

@@ -145,7 +145,7 @@ const Sidebar: React.FC = () => (
 
 //  App 
 const App: React.FC = () => {
-  const isAuthenticated = localStorage.getItem("agentstack_token") !== null || true;
+  const isAuthenticated = localStorage.getItem("oxly_token") !== null || true;
   if (!isAuthenticated) return <LoginPage />;
 
   return (
@@ -177,7 +177,7 @@ const LoginPage: React.FC = () => (
     <div style={{ width: 320 }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>Welcome Back</h1>
       <p style={{ color: "#666", textAlign: "center", marginBottom: 32, fontSize: 14 }}>Enter your credentials to access the platform</p>
-      <form onSubmit={(e) => { e.preventDefault(); localStorage.setItem("agentstack_token", "demo-token"); window.location.reload(); }}>
+      <form onSubmit={(e) => { e.preventDefault(); localStorage.setItem("oxly_token", "demo-token"); window.location.reload(); }}>
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", fontSize: 13, color: "#888", marginBottom: 6 }}>Email</label>
           <input type="email" placeholder="you@company.com" style={{ width: "100%", background: "#111", border: "1px solid #222", borderRadius: 8, padding: "10px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} required />

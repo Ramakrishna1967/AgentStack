@@ -160,7 +160,7 @@ const Settings: React.FC = () => {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
           <div>
             <label style={{ ...S.label, display: "block", marginBottom: 6 }}>Email</label>
-            <input style={S.input} type="email" defaultValue="user@agentstack.dev" />
+            <input style={S.input} type="email" defaultValue="user@oxly.dev" />
           </div>
           <div>
             <label style={{ ...S.label, display: "block", marginBottom: 6 }}>Display Name</label>
@@ -174,7 +174,7 @@ const Settings: React.FC = () => {
         <div style={{ fontSize: 14, fontWeight: 600, color: "#ef4444", marginBottom: 4 }}>Danger Zone</div>
         <p style={{ fontSize: 12, color: "#555", marginBottom: 14 }}>Irreversible destructive actions. Proceed with caution.</p>
         <button
-          onClick={() => { localStorage.removeItem("agentstack_token"); window.location.reload(); }}
+          onClick={() => { localStorage.removeItem("oxly_token"); window.location.reload(); }}
           style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6, padding: "8px 16px", fontSize: 12, cursor: "pointer" }}
         >Sign Out</button>
       </div>

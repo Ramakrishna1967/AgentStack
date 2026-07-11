@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Async-safe context propagation for trace and span linking.
@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from oxly.tracer import Span
 
-logger = logging.getLogger("agentstack.context")
+logger = logging.getLogger("oxly.context")
 
 #  Configuration 
 # Maximum span nesting depth to prevent stack overflow
@@ -35,11 +35,11 @@ _MAX_SPAN_DEPTH = 100
 # These are the two core context vars that propagate across async boundaries.
 
 _trace_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "agentstack_trace_id", default=None
+    "oxly_trace_id", default=None
 )
 
 _span_stack_var: contextvars.ContextVar[list["Span"]] = contextvars.ContextVar(
-    "agentstack_span_stack"
+    "oxly_span_stack"
 )
 
 

@@ -125,13 +125,13 @@ def init(
     # Configure logging
     config = get_config()
     log_level = logging.DEBUG if config.debug else getattr(logging, config.log_level, logging.INFO)
-    logging.getLogger("agentstack").setLevel(log_level)
+    logging.getLogger("oxly").setLevel(log_level)
 
     if config.debug:
         handler = logging.StreamHandler()
         handler.setFormatter(
-            logging.Formatter("[agentstack] %(levelname)s %(name)s: %(message)s")
+            logging.Formatter("[oxly] %(levelname)s %(name)s: %(message)s")
         )
-        OXLY_logger = logging.getLogger("agentstack")
-        if not OXLY_logger.handlers:
-            OXLY_logger.addHandler(handler)
+        oxly_logger = logging.getLogger("oxly")
+        if not oxly_logger.handlers:
+            oxly_logger.addHandler(handler)

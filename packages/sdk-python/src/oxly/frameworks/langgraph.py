@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """LangGraph auto-instrumentation via monkey-patching.
@@ -23,7 +23,7 @@ import functools
 import logging
 from typing import Any, Callable
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 _instrumented = False
 
@@ -55,16 +55,16 @@ def instrument() -> None:
                     
                     # Sync
                     if hasattr(runnable, "func") and runnable.func:
-                        if not hasattr(runnable.func, "_agentstack_instrumented"):
+                        if not hasattr(runnable.func, "_oxly_instrumented"):
                             runnable.func = _instrument_node(node_name, runnable.func)
                     
                     # Async
                     if hasattr(runnable, "afunc") and runnable.afunc:
-                        if not hasattr(runnable.afunc, "_agentstack_instrumented"):
+                        if not hasattr(runnable.afunc, "_oxly_instrumented"):
                             runnable.afunc = _instrument_node(node_name, runnable.afunc)
                 
                 # Fallback for older versions where nodes were direct functions
-                elif not hasattr(node_spec, "_agentstack_instrumented") and callable(node_spec):
+                elif not hasattr(node_spec, "_oxly_instrumented") and callable(node_spec):
                     self.nodes[node_name] = _instrument_node(node_name, node_spec)
 
             # Call the original compile
@@ -124,7 +124,7 @@ def _instrument_node(node_name: str, node_func: Callable) -> Callable:
                 span.end()
                 raise
 
-        async_wrapped._agentstack_instrumented = True  # type: ignore
+        async_wrapped._oxly_instrumented = True  # type: ignore
         return async_wrapped
 
     @functools.wraps(node_func)
@@ -157,5 +157,5 @@ def _instrument_node(node_name: str, node_func: Callable) -> Callable:
             raise
 
     # Mark as instrumented to avoid double-wrapping
-    wrapped._agentstack_instrumented = True  # type: ignore
+    wrapped._oxly_instrumented = True  # type: ignore
     return wrapped

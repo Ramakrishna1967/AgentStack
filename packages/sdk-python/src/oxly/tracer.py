@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """Tracer singleton and Span class  the heart of the AgentStack SDK.
@@ -25,7 +25,7 @@ from oxly.config import get_config
 from oxly.context import get_current_trace_id, get_parent_span_id, set_current_trace_id
 from oxly.models import SpanEvent, SpanModel, SpanStatus
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 
 class Span:

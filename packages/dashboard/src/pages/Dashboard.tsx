@@ -217,7 +217,7 @@ const Dashboard: React.FC = () => {
           <div style={{ ...S.card, padding: 16 }}>
             <div style={S.h2}>Quick Start</div>
             <pre style={{ fontSize: 11, color: "#888", fontFamily: "monospace", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
-              <span style={{ color: "#a78bfa" }}>from</span> agentstack <span style={{ color: "#a78bfa" }}>import</span> observe{"\n\n"}
+              <span style={{ color: "#a78bfa" }}>from</span> oxly <span style={{ color: "#a78bfa" }}>import</span> observe{"\n\n"}
               <span style={{ color: "#555" }}># Wrap any function</span>{"\n"}
               @observe{"\n"}
               <span style={{ color: "#a78bfa" }}>def</span> <span style={{ color: "#93c5fd" }}>my_agent</span>(q):{"\n"}

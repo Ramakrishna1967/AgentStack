@@ -1,4 +1,4 @@
-﻿# Copyright 2026 AgentStack Contributors
+# Copyright 2026 AgentStack Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 """AutoGen auto-instrumentation (stub for future implementation).
@@ -16,7 +16,7 @@ import functools
 import logging
 from typing import Any, Callable
 
-logger = logging.getLogger("agentstack")
+logger = logging.getLogger("oxly")
 
 _instrumented = False
 

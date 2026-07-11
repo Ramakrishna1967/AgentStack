@@ -15,7 +15,7 @@ from typing import Callable
 import asyncio
 import logging
 
-logger = logging.getLogger("agentstack.api.middleware")
+logger = logging.getLogger("oxly.api.middleware")
 
 # Simple in-memory rate limiter with bounded memory
 _rate_limit_store: dict[str, list[float]] = defaultdict(list)

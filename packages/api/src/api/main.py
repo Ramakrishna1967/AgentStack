@@ -21,7 +21,7 @@ from api.retention import start_retention_sweep, stop_retention_sweep
 from api.schemas import HealthResponse
 from api.span_consumer import start_span_consumer, stop_span_consumer
 
-logger = logging.getLogger("agentstack.api")
+logger = logging.getLogger("oxly.api")
 
 # In-process replacement for the old Redis "spans.ingest" stream, drained by
 # span_consumer.py (cost calc, security rules, SQLite writes, WS broadcast).
