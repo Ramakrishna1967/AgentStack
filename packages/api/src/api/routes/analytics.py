@@ -11,7 +11,6 @@ from typing import Literal
 
 from api.db import get_db
 from api.dependencies import get_current_active_user, get_user_project_ids, verify_project_ownership
-from api.db_clickhouse import get_clickhouse, ClickHouseClient
 
 router = APIRouter()
 
@@ -22,47 +21,49 @@ async def get_cost_timeseries(
     interval: Literal["hour", "day", "week"] = Query("day"),
     start_date: int | None = Query(None, description="Unix timestamp in seconds"),
     end_date: int | None = Query(None, description="Unix timestamp in seconds"),
-    ch: ClickHouseClient = Depends(get_clickhouse),
     db: aiosqlite.Connection = Depends(get_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """Get cost metrics over time from ClickHouse.
+    """Get cost metrics over time.
 
-    Groups by time interval and sums cost_usd.
+    Groups by time interval and sums cost_usd. cost_metrics.timestamp is
+    stored as Unix seconds (see api/cost.py), so bucketing uses strftime
+    with the 'unixepoch' modifier.
     """
     where_clauses = []
-    params = []
+    params: list = []
 
     if project_id:
         if not await verify_project_ownership(db, current_user["id"], project_id):
             raise HTTPException(status_code=403, detail="Project not found")
-        where_clauses.append("project_id = %s")
+        where_clauses.append("project_id = ?")
         params.append(project_id)
     else:
         owned_ids = await get_user_project_ids(db, current_user["id"])
         if not owned_ids:
             return {"interval": interval, "project_id": None, "data": []}
-        placeholders = ", ".join(["%s"] * len(owned_ids))
+        placeholders = ", ".join("?" for _ in owned_ids)
         where_clauses.append(f"project_id IN ({placeholders})")
         params.extend(owned_ids)
 
     if start_date:
-        where_clauses.append("timestamp >= toDateTime(%s)")
+        where_clauses.append("timestamp >= ?")
         params.append(start_date)
 
     if end_date:
-        where_clauses.append("timestamp <= toDateTime(%s)")
+        where_clauses.append("timestamp <= ?")
         params.append(end_date)
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
 
-    # Time bucket function
+    # Time bucket expression, keyed off Unix-seconds timestamp column
     if interval == "hour":
-        time_func = "toStartOfHour(timestamp)"
+        time_func = "strftime('%Y-%m-%dT%H:00:00', timestamp, 'unixepoch')"
     elif interval == "day":
-        time_func = "toStartOfDay(timestamp)"
+        time_func = "strftime('%Y-%m-%dT00:00:00', timestamp, 'unixepoch')"
     else:
-        time_func = "toStartOfWeek(timestamp)"
+        # Week start = Sunday, to mirror ClickHouse's default toStartOfWeek
+        time_func = "strftime('%Y-%m-%dT00:00:00', timestamp, 'unixepoch', 'weekday 0', '-6 days')"
 
     query = f"""
         SELECT
@@ -79,22 +80,21 @@ async def get_cost_timeseries(
     """
 
     try:
-        rows = await ch.execute(query, params if params else None)
-    except Exception as e:
+        async with db.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+    except Exception:
         # If table doesn't exist or other error, return empty
         return {"data": []}
 
     # Format for frontend
     # Recharts expects array of objects. We might want to group by timestamp.
     # [{timestamp: ..., "gpt-4": 1.2, "claude-3": 0.5}, ...]
-    
+
     processed = {}
-    
+
     for row in rows:
-        bucket = row["time_bucket"] # DateTime
-        # Convert to ISO string or timestamp
-        ts = bucket.isoformat() if hasattr(bucket, 'isoformat') else str(bucket)
-        
+        ts = row["time_bucket"]
+
         if ts not in processed:
             processed[ts] = {"timestamp": ts, "total_cost": 0}
             

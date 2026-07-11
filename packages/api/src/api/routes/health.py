@@ -5,9 +5,7 @@
 
 from __future__ import annotations
 
-import aiosqlite
-from fastapi import APIRouter, Depends
-from api.db_clickhouse import get_clickhouse, ClickHouseClient
+from fastapi import APIRouter
 from api.db import get_database
 from api.config import settings
 import redis.asyncio as redis
@@ -21,14 +19,11 @@ _START_TIME = time.time()
 
 
 @router.get("/health")
-async def health_check(ch: ClickHouseClient = Depends(get_clickhouse)):
+async def health_check():
     """Check connectivity to all downstream services.
 
     Returns individual service status and overall health.
     """
-    # ClickHouse
-    ch_ok = await ch.check_health()
-
     # Redis (with proper connection cleanup)
     redis_ok = False
     try:
@@ -50,8 +45,8 @@ async def health_check(ch: ClickHouseClient = Depends(get_clickhouse)):
     except Exception:
         pass
 
-    all_ok = ch_ok and redis_ok and sqlite_ok
-    any_ok = ch_ok or redis_ok or sqlite_ok
+    all_ok = redis_ok and sqlite_ok
+    any_ok = redis_ok or sqlite_ok
 
     return {
         "status": "healthy" if all_ok else ("degraded" if any_ok else "down"),
@@ -59,7 +54,6 @@ async def health_check(ch: ClickHouseClient = Depends(get_clickhouse)):
         "uptime_seconds": round(time.time() - _START_TIME, 1),
         "environment": settings.ENVIRONMENT,
         "services": {
-            "clickhouse": "operational" if ch_ok else "down",
             "redis": "operational" if redis_ok else "down",
             "sqlite": "operational" if sqlite_ok else "down",
         }

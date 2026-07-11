@@ -10,7 +10,6 @@ import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.db import get_db
-from api.db_clickhouse import get_clickhouse, ClickHouseClient
 from api.dependencies import get_current_active_user, get_user_project_ids, verify_project_ownership
 from api.schemas import SecurityAlertSchema, SecurityAlertSeverity
 
@@ -22,7 +21,6 @@ async def list_security_alerts(
     project_id: str | None = Query(None),
     severity: SecurityAlertSeverity | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
-    ch: ClickHouseClient = Depends(get_clickhouse),
     db: aiosqlite.Connection = Depends(get_db),
     current_user: dict = Depends(get_current_active_user),
 ):
@@ -32,23 +30,24 @@ async def list_security_alerts(
     Returns most recent alerts first.
     """
     filters = []
-    params = {}
+    params: list = []
 
     if project_id:
         if not await verify_project_ownership(db, current_user["id"], project_id):
             raise HTTPException(status_code=403, detail="Project not found")
-        filters.append("project_id = {project_id:String}")
-        params["project_id"] = project_id
+        filters.append("project_id = ?")
+        params.append(project_id)
     else:
         owned_ids = await get_user_project_ids(db, current_user["id"])
         if not owned_ids:
             return []
-        filters.append("project_id IN {owned_ids:Array(String)}")
-        params["owned_ids"] = owned_ids
+        placeholders = ", ".join("?" for _ in owned_ids)
+        filters.append(f"project_id IN ({placeholders})")
+        params.extend(owned_ids)
 
     if severity:
-        filters.append("severity = {severity:String}")
-        params["severity"] = severity.value
+        filters.append("severity = ?")
+        params.append(severity.value)
 
     where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
 
@@ -57,10 +56,12 @@ async def list_security_alerts(
         FROM security_alerts
         {where_sql}
         ORDER BY created_at DESC
-        LIMIT {limit}
+        LIMIT ?
     """
+    params.append(limit)
 
-    rows = await ch.execute(query, params)
+    async with db.execute(query, params) as cursor:
+        rows = await cursor.fetchall()
 
     alerts = []
     for row in rows:
