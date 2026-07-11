@@ -145,7 +145,7 @@ const Sidebar: React.FC = () => (
 
 //  App 
 const App: React.FC = () => {
-  const isAuthenticated = localStorage.getItem("oxly_token") !== null || true;
+  const isAuthenticated = localStorage.getItem("oxly_token") !== null;
   if (!isAuthenticated) return <LoginPage />;
 
   return (
