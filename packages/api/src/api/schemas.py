@@ -158,13 +158,6 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class HealthResponse(BaseModel):
-    """Health check response."""
-
-    status: str = "ok"
-    version: str = "0.1.0-alpha"
-
-
 class PaginatedResponse(BaseModel):
     """Generic paginated response."""
 

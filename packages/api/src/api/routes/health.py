@@ -19,7 +19,7 @@ _START_TIME = time.time()
 
 @router.get("/health")
 async def health_check():
-    """Check connectivity to all downstream services.
+    """Check connectivity to the API's dependencies (just SQLite).
 
     Returns individual service status and overall health.
     """

@@ -18,7 +18,6 @@ from fastapi.staticfiles import StaticFiles
 from api.db import get_database
 from api.middleware import add_cors_middleware, rate_limit_middleware
 from api.retention import start_retention_sweep, stop_retention_sweep
-from api.schemas import HealthResponse
 from api.span_consumer import start_span_consumer, stop_span_consumer
 
 logger = logging.getLogger("oxly.api")
