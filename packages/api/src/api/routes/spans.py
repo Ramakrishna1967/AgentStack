@@ -41,7 +41,7 @@ async def get_span_detail(
         name=row["name"],
         start_time=row["start_time"],
         end_time=end_ns,
-        duration_ms=row["duration_ms"] or 0,
+        duration_ms=round(row["duration_ms"]) if row["duration_ms"] is not None else 0,
         status=SpanStatus(row["status"]),
         service_name=row["service_name"] or "default",
         attributes=json.loads(row["attributes"]) if row["attributes"] else {},
