@@ -41,10 +41,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Ramakrishna1967/AgentState"
-Documentation = "https://github.com/Ramakrishna1967/AgentState#readme"
-Repository = "https://github.com/Ramakrishna1967/AgentState"
-Issues = "https://github.com/Ramakrishna1967/AgentState/issues"
+Homepage = "https://github.com/ramakrishna1967/Oxly"
+Documentation = "https://github.com/ramakrishna1967/Oxly#readme"
+Repository = "https://github.com/ramakrishna1967/Oxly"
+Issues = "https://github.com/ramakrishna1967/Oxly/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/oxly"]
