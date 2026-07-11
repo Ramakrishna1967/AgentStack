@@ -27,8 +27,6 @@ SPAN_QUEUE_MAXSIZE = 10_000
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown events."""
-    from api.routes import ws
-
     # Startup
     logger.info("AgentStack API starting...")
     db = get_database()
@@ -39,14 +37,10 @@ async def lifespan(app: FastAPI):
     app.state.span_queue = asyncio.Queue(maxsize=SPAN_QUEUE_MAXSIZE)
     start_span_consumer(app)
 
-    # Start WS Consumer
-    await ws.start_ws_consumer()
-
     yield
 
     # Shutdown
     await stop_span_consumer(app)
-    await ws.stop_ws_consumer()
     logger.info("AgentStack API shutting down...")
 
 

@@ -8,86 +8,15 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 from typing import Set
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from redis.asyncio import Redis
 
 router = APIRouter()
 logger = logging.getLogger("agentstack.api")
 
 # Connected WebSocket clients
 _connections: Set[WebSocket] = set()
-
-# Redis Consumer for Live Updates
-redis_client: Redis | None = None
-consumer_task: asyncio.Task | None = None
-
-
-async def start_ws_consumer():
-    """Start the Redis consumer background task."""
-    global redis_client, consumer_task
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    redis_client = Redis.from_url(redis_url, decode_responses=True)
-    
-    # Start consumer loop
-    consumer_task = asyncio.create_task(consume_stream())
-    logger.info("WebSocket Redis consumer started")
-
-
-async def stop_ws_consumer():
-    """Stop the Redis consumer."""
-    global redis_client, consumer_task
-    if consumer_task:
-        consumer_task.cancel()
-        try:
-            await consumer_task
-        except asyncio.CancelledError:
-            pass
-            
-    if redis_client:
-        await redis_client.close()
-        
-    redis_client = None
-    consumer_task = None
-        
-    logger.info("WebSocket Redis consumer stopped")
-
-
-async def consume_stream():
-    """Read from Redis streams and broadcast."""
-    stream_key = "alerts.live"
-    last_id = "$"
-    
-    while True:
-        try:
-            # XREAD from stream. Block for 1s.
-            streams = await redis_client.xread(
-                {stream_key: last_id}, count=10, block=1000
-            )
-
-            if not streams:
-                continue
-
-            for _, messages in streams:
-                for message_id, data in messages:
-                    last_id = message_id
-                    # Broadcast alert
-                    # Data is a dict. We wrap it in a WS message.
-                    # Redis XREAD returns dict like {'id': ..., 'rule': ...}
-                    
-                    ws_msg = {
-                        "type": "alert",
-                        "data": data
-                    }
-                    await broadcast(ws_msg)
-
-        except asyncio.CancelledError:
-            break
-        except Exception as e:
-            logger.error(f"Error in WS consumer: {e}")
-            await asyncio.sleep(1.0)
 
 
 async def broadcast(message: dict) -> None:
@@ -111,11 +40,9 @@ async def broadcast(message: dict) -> None:
 @router.websocket("/ws/traces")
 async def ws_trace_feed(websocket: WebSocket, token: str | None = None):
     """WebSocket endpoint with JWT authentication.
-    
-    Streams:
-    1. Traces (future implementation via Redis PubSub or similar)
-    2. Alerts (via Redis Stream consumer)
-    
+
+    Alerts are pushed in-process via broadcast() from span_consumer.py.
+
     Args:
         token: JWT token can be passed as query parameter ?token=xxx
     """
