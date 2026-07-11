@@ -114,7 +114,5 @@ async def ws_trace_feed(websocket: WebSocket, token: str | None = None):
         logger.error("WebSocket error: %s", type(e).__name__)
     finally:
         _connections.discard(websocket)
-        if websocket in _connections:
-            _connections.remove(websocket)
         logger.info("WebSocket client disconnected. Total: %d", len(_connections))
 

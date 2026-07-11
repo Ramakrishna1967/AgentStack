@@ -1,20 +1,19 @@
 # Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""CrewAI auto-instrumentation (stub for future implementation).
+"""CrewAI auto-instrumentation.
 
-CrewAI instrumentation will automatically create spans for:
+Monkey-patches CrewAI's Task and Agent classes to automatically create
+spans for:
     - Task executions
     - Agent actions
     - Tool calls
     - Inter-agent communication
-
-This is currently a stub. Full implementation will be added in a future phase.
 """
 
 import functools
 import logging
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger("oxly")
 

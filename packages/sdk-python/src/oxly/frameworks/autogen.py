@@ -1,20 +1,18 @@
 # Copyright 2026 Oxly Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""AutoGen auto-instrumentation (stub for future implementation).
+"""AutoGen auto-instrumentation.
 
-AutoGen instrumentation will automatically create spans for:
+Monkey-patches AutoGen's ConversableAgent to automatically create spans for:
     - Agent message exchanges
     - Function calls within agents
     - Group chat turns
     - Code execution
-
-This is currently a stub. Full implementation will be added in a future phase.
 """
 
 import functools
 import logging
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger("oxly")
 

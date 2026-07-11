@@ -177,8 +177,7 @@ class Span:
         try:
             from oxly.sanitizer import scrub_pii
             self.attributes = scrub_pii(self.attributes)
-        except (ImportError, Exception):
-            # Fallback for early build steps or unexpected errors
+        except Exception:
             pass
 
         # Queue for export (import here to avoid circular import)
@@ -188,9 +187,6 @@ class Span:
             processor = get_processor()
             if processor is not None:
                 processor.add(self)
-        except ImportError:
-            # exporter not yet available (during Step 1 before Step 5)
-            pass
         except Exception:
             logger.debug("Failed to queue span for export", exc_info=True)
 
@@ -212,7 +208,6 @@ class Span:
             attributes=self.attributes,
             events=self.events,
             project_id=config.project_id,
-            api_key_hash="",
         )
 
     @property

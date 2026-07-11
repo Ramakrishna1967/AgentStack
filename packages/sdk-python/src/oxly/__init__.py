@@ -78,8 +78,8 @@ def init(
         try:
             from oxly.frameworks import auto_instrument as perform_auto_instrument
             perform_auto_instrument()
-        except ImportError:
-            pass # Frameworks not available in this build step
+        except Exception:
+            logger.debug("Auto-instrumentation failed", exc_info=True)
 
     # Reset singletons so they pick up new env vars
     reset_config()

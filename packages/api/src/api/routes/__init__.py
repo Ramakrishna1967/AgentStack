@@ -3,6 +3,6 @@
 
 """API route modules."""
 
-from api.routes import analytics, auth, projects, security, spans, traces, ws
+from api.routes import analytics, auth, health, ingest, projects, security, spans, traces, ws
 
-__all__ = ["traces", "spans", "projects", "security", "analytics", "auth", "ws"]
+__all__ = ["traces", "spans", "projects", "security", "analytics", "auth", "health", "ingest", "ws"]
