@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 from api.db import get_database
 from api.middleware import add_cors_middleware, rate_limit_middleware
+from api.retention import start_retention_sweep, stop_retention_sweep
 from api.schemas import HealthResponse
 from api.span_consumer import start_span_consumer, stop_span_consumer
 
@@ -36,11 +37,13 @@ async def lifespan(app: FastAPI):
     # Ingestion pipeline (merged from the collector) — in-process queue, no Redis
     app.state.span_queue = asyncio.Queue(maxsize=SPAN_QUEUE_MAXSIZE)
     start_span_consumer(app)
+    start_retention_sweep(app)
 
     yield
 
     # Shutdown
     await stop_span_consumer(app)
+    await stop_retention_sweep(app)
     logger.info("AgentStack API shutting down...")
 
 
