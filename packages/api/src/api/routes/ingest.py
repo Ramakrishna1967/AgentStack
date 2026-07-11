@@ -31,8 +31,11 @@ MAX_PAYLOAD_BYTES = 5 * 1024 * 1024
 MAX_DECOMPRESSED_BYTES = 50 * 1024 * 1024
 
 
-def _validate_span(span_data: dict) -> None:
-    """Raise ValueError if a span dict is missing required fields/types."""
+def _validate_span(span_data: object) -> None:
+    """Raise ValueError if a span entry isn't a dict, or is missing required fields/types."""
+    if not isinstance(span_data, dict):
+        raise ValueError(f"Span entry must be a JSON object, got {type(span_data).__name__}")
+
     required_fields = ["span_id", "trace_id", "name", "start_time", "end_time"]
     missing = [f for f in required_fields if f not in span_data]
     if missing:
