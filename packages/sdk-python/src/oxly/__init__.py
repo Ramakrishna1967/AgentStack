@@ -87,28 +87,28 @@ def init(
 ) -> None:
     """Initialize the AgentStack SDK with custom configuration.
 
-    Any provided arguments override the corresponding AGENTSTACK_* environment
+    Any provided arguments override the corresponding OXLY_* environment
     variables. Call this before any @observe decorators execute.
 
     Args:
-        api_key: API key for the Collector (overrides AGENTSTACK_API_KEY).
-        collector_url: Collector URL (overrides AGENTSTACK_COLLECTOR_URL).
-        enabled: Enable/disable the SDK (overrides AGENTSTACK_ENABLED).
-        service_name: Service name for spans (overrides AGENTSTACK_SERVICE_NAME).
-        debug: Enable debug logging (overrides AGENTSTACK_DEBUG).
+        api_key: API key for the Collector (overrides OXLY_API_KEY).
+        collector_url: Collector URL (overrides OXLY_COLLECTOR_URL).
+        enabled: Enable/disable the SDK (overrides OXLY_ENABLED).
+        service_name: Service name for spans (overrides OXLY_SERVICE_NAME).
+        debug: Enable debug logging (overrides OXLY_DEBUG).
     """
     import os
 
     if api_key is not None:
-        os.environ["AGENTSTACK_API_KEY"] = api_key
+        os.environ["OXLY_API_KEY"] = api_key
     if collector_url is not None:
-        os.environ["AGENTSTACK_COLLECTOR_URL"] = collector_url
+        os.environ["OXLY_COLLECTOR_URL"] = collector_url
     if enabled is not None:
-        os.environ["AGENTSTACK_ENABLED"] = str(enabled).lower()
+        os.environ["OXLY_ENABLED"] = str(enabled).lower()
     if service_name is not None:
-        os.environ["AGENTSTACK_SERVICE_NAME"] = service_name
+        os.environ["OXLY_SERVICE_NAME"] = service_name
     if debug is not None:
-        os.environ["AGENTSTACK_DEBUG"] = str(debug).lower()
+        os.environ["OXLY_DEBUG"] = str(debug).lower()
 
     # Apply auto-instrumentation if requested
     if auto_instrument:
@@ -132,6 +132,6 @@ def init(
         handler.setFormatter(
             logging.Formatter("[agentstack] %(levelname)s %(name)s: %(message)s")
         )
-        agentstack_logger = logging.getLogger("agentstack")
-        if not agentstack_logger.handlers:
-            agentstack_logger.addHandler(handler)
+        OXLY_logger = logging.getLogger("agentstack")
+        if not OXLY_logger.handlers:
+            OXLY_logger.addHandler(handler)

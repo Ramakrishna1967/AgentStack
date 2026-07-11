@@ -145,7 +145,7 @@ def test_batch_span_processor_graceful_shutdown(local_store):
 def test_get_processor_singleton():
     """Test get_processor returns a singleton."""
     import os
-    os.environ["AGENTSTACK_ENABLED"] = "true"
+    os.environ["OXLY_ENABLED"] = "true"
 
     reset_processor()
     p1 = get_processor()
@@ -155,13 +155,13 @@ def test_get_processor_singleton():
     assert p1 is p2
 
     reset_processor()
-    del os.environ["AGENTSTACK_ENABLED"]
+    del os.environ["OXLY_ENABLED"]
 
 
 def test_get_processor_disabled():
     """Test get_processor returns None when SDK is disabled."""
     import os
-    os.environ["AGENTSTACK_ENABLED"] = "false"
+    os.environ["OXLY_ENABLED"] = "false"
 
     reset_processor()
     from oxly.config import reset_config
@@ -171,4 +171,4 @@ def test_get_processor_disabled():
     assert processor is None
 
     reset_processor()
-    del os.environ["AGENTSTACK_ENABLED"]
+    del os.environ["OXLY_ENABLED"]

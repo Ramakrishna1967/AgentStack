@@ -6,8 +6,8 @@ import os
 import sys
 
 # Ensure we use the correct collector URL
-os.environ["AGENTSTACK_COLLECTOR_URL"] = "http://localhost:8000"
-os.environ["AGENTSTACK_API_KEY"] = "ak_demo123" # Mock API key
+os.environ["OXLY_COLLECTOR_URL"] = "http://localhost:8000"
+os.environ["OXLY_API_KEY"] = "ak_demo123" # Mock API key
 
 # Ensure local sdk is found
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agentstack', 'packages', 'sdk-python', 'src')))

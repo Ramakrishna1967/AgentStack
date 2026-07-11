@@ -17,12 +17,12 @@ if not GOOGLE_API_KEY:
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # AgentStack Configuration
-os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", "http://localhost:8000")
-os.environ.setdefault("AGENTSTACK_API_KEY", os.environ.get("AGENTSTACK_API_KEY", ""))
-os.environ.setdefault("AGENTSTACK_PROJECT_ID", "real-world-test")
+os.environ.setdefault("OXLY_COLLECTOR_URL", "http://localhost:8000")
+os.environ.setdefault("OXLY_API_KEY", os.environ.get("OXLY_API_KEY", ""))
+os.environ.setdefault("OXLY_PROJECT_ID", "real-world-test")
 
 # Ensure SDK is in path (for development only)
-sdk_path = os.environ.get("AGENTSTACK_SDK_PATH", "/app/packages/sdk-python/src")
+sdk_path = os.environ.get("OXLY_SDK_PATH", "/app/packages/sdk-python/src")
 sys.path.insert(0, sdk_path)
 
 try:

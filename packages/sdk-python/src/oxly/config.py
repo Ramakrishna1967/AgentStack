@@ -3,7 +3,7 @@
 
 """AgentStack SDK configuration loaded from environment variables.
 
-All configuration is read from AGENTSTACK_* environment variables with sensible defaults.
+All configuration is read from OXLY_* environment variables with sensible defaults.
 The Config singleton is initialized once and reused throughout the SDK lifecycle.
 """
 
@@ -66,31 +66,31 @@ class OxlyConfig:
 
     @classmethod
     def from_env(cls) -> OxlyConfig:
-        """Create a Config instance by reading AGENTSTACK_* environment variables.
+        """Create a Config instance by reading OXLY_* environment variables.
 
         Environment Variables:
-            AGENTSTACK_API_KEY: Required. API key for authentication.
-            AGENTSTACK_COLLECTOR_URL: Default "http://localhost:8000".
-            AGENTSTACK_ENABLED: Default "true". Set to "false" to disable.
-            AGENTSTACK_BATCH_SIZE: Default 64. Max spans before flush.
-            AGENTSTACK_EXPORT_INTERVAL: Default 5000. Milliseconds before flush.
-            AGENTSTACK_MAX_QUEUE_SIZE: Default 2048. Ring buffer capacity.
-            AGENTSTACK_LOG_LEVEL: Default "INFO". Python logging level.
-            AGENTSTACK_DEBUG: Default "false". Enable verbose SDK logging.
-            AGENTSTACK_SERVICE_NAME: Default "default". Service name for spans.
-            AGENTSTACK_PROJECT_ID: Default "default". Project ID for the dashboard.
+            OXLY_API_KEY: Required. API key for authentication.
+            OXLY_COLLECTOR_URL: Default "http://localhost:8000".
+            OXLY_ENABLED: Default "true". Set to "false" to disable.
+            OXLY_BATCH_SIZE: Default 64. Max spans before flush.
+            OXLY_EXPORT_INTERVAL: Default 5000. Milliseconds before flush.
+            OXLY_MAX_QUEUE_SIZE: Default 2048. Ring buffer capacity.
+            OXLY_LOG_LEVEL: Default "INFO". Python logging level.
+            OXLY_DEBUG: Default "false". Enable verbose SDK logging.
+            OXLY_SERVICE_NAME: Default "default". Service name for spans.
+            OXLY_PROJECT_ID: Default "default". Project ID for the dashboard.
         """
         return cls(
-            api_key=_env("AGENTSTACK_API_KEY", ""),
-            collector_url=_env("AGENTSTACK_COLLECTOR_URL", "http://localhost:8000"),
-            enabled=_env_bool("AGENTSTACK_ENABLED", True),
-            batch_size=_env_int("AGENTSTACK_BATCH_SIZE", 64),
-            export_interval_ms=_env_int("AGENTSTACK_EXPORT_INTERVAL", 5000),
-            max_queue_size=_env_int("AGENTSTACK_MAX_QUEUE_SIZE", 2048),
-            log_level=_env("AGENTSTACK_LOG_LEVEL", "INFO"),
-            debug=_env_bool("AGENTSTACK_DEBUG", False),
-            service_name=_env("AGENTSTACK_SERVICE_NAME", "default"),
-            project_id=_env("AGENTSTACK_PROJECT_ID", "default"),
+            api_key=_env("OXLY_API_KEY", ""),
+            collector_url=_env("OXLY_COLLECTOR_URL", "http://localhost:8000"),
+            enabled=_env_bool("OXLY_ENABLED", True),
+            batch_size=_env_int("OXLY_BATCH_SIZE", 64),
+            export_interval_ms=_env_int("OXLY_EXPORT_INTERVAL", 5000),
+            max_queue_size=_env_int("OXLY_MAX_QUEUE_SIZE", 2048),
+            log_level=_env("OXLY_LOG_LEVEL", "INFO"),
+            debug=_env_bool("OXLY_DEBUG", False),
+            service_name=_env("OXLY_SERVICE_NAME", "default"),
+            project_id=_env("OXLY_PROJECT_ID", "default"),
         )
 
 

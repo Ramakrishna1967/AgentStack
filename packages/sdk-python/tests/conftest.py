@@ -27,7 +27,7 @@ def reset_sdk():
     reset_local_store()
     # Clear env vars
     for key in list(os.environ.keys()):
-        if key.startswith("AGENTSTACK_"):
+        if key.startswith("OXLY_"):
             del os.environ[key]
     yield
     # Cleanup after test
@@ -82,17 +82,17 @@ def mock_spans():
 def env_config():
     """Set up test environment variables."""
     os.environ.update({
-        "AGENTSTACK_API_KEY": "test-api-key",
-        "AGENTSTACK_COLLECTOR_URL": "http://localhost:4318",
-        "AGENTSTACK_ENABLED": "true",
-        "AGENTSTACK_BATCH_SIZE": "32",
-        "AGENTSTACK_EXPORT_INTERVAL": "1000",
-        "AGENTSTACK_SERVICE_NAME": "test-service",
+        "OXLY_API_KEY": "test-api-key",
+        "OXLY_COLLECTOR_URL": "http://localhost:4318",
+        "OXLY_ENABLED": "true",
+        "OXLY_BATCH_SIZE": "32",
+        "OXLY_EXPORT_INTERVAL": "1000",
+        "OXLY_SERVICE_NAME": "test-service",
     })
     reset_config()
     yield
     # Clean up
     for key in list(os.environ.keys()):
-        if key.startswith("AGENTSTACK_"):
+        if key.startswith("OXLY_"):
             del os.environ[key]
     reset_config()

@@ -14,15 +14,15 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 # Point SDK collector to backend (use environment variables or HTTPS in production)
-os.environ.setdefault("AGENTSTACK_COLLECTOR_URL", os.environ.get("AGENTSTACK_COLLECTOR_URL", "http://localhost:8000"))
-os.environ.setdefault("AGENTSTACK_API_KEY", os.environ.get("AGENTSTACK_API_KEY", ""))
-os.environ.setdefault("AGENTSTACK_PROJECT_ID", "demo-simulation")
+os.environ.setdefault("OXLY_COLLECTOR_URL", os.environ.get("OXLY_COLLECTOR_URL", "http://localhost:8000"))
+os.environ.setdefault("OXLY_API_KEY", os.environ.get("OXLY_API_KEY", ""))
+os.environ.setdefault("OXLY_PROJECT_ID", "demo-simulation")
 
 # Warn if API key is not set
-if not os.environ.get("AGENTSTACK_API_KEY"):
-    logger.warning("AGENTSTACK_API_KEY not set. Traces will be stored locally only.")
+if not os.environ.get("OXLY_API_KEY"):
+    logger.warning("OXLY_API_KEY not set. Traces will be stored locally only.")
 
-sdk_path = os.environ.get("AGENTSTACK_SDK_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'packages', 'sdk-python', 'src')))
+sdk_path = os.environ.get("OXLY_SDK_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'packages', 'sdk-python', 'src')))
 sys.path.insert(0, sdk_path)
 
 try:
@@ -36,7 +36,7 @@ except ImportError:
     from oxly.context import get_current_span
 
 # Initialize AgentStack with API key from environment
-init(api_key=os.environ.get("AGENTSTACK_API_KEY"))
+init(api_key=os.environ.get("OXLY_API_KEY"))
 
 class State(TypedDict):
     user_query: str

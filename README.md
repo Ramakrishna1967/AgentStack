@@ -363,20 +363,20 @@ This entire flow — register, login, create project, send a trace, and read it 
 | `CORS_ORIGINS` | `http://localhost,http://127.0.0.1,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:80` | Comma-separated allowed origins (read directly via `os.getenv`, not part of `Settings`) |
 | `DASHBOARD_DIST_DIR` | `<api package dir>/static` | Where `main.py` looks for the dashboard's built `dist/` |
 
-**SDK** (`packages/sdk-python`, read by `agentstack/config.py`, all prefixed `AGENTSTACK_`):
+**SDK** (`packages/sdk-python`, read by `agentstack/config.py`, all prefixed `OXLY_`):
 
 | Variable | Default | Description |
 |----------|---------|--------------|
-| `AGENTSTACK_COLLECTOR_URL` | `http://localhost:8000` | Base URL of your running AgentStack API |
-| `AGENTSTACK_API_KEY` | *(empty)* | API key from `POST /api/v1/projects` |
-| `AGENTSTACK_ENABLED` | `true` | Master on/off switch |
-| `AGENTSTACK_BATCH_SIZE` | `64` | Max spans per export batch |
-| `AGENTSTACK_EXPORT_INTERVAL` | `5000` | Max ms before a partial batch flushes |
-| `AGENTSTACK_MAX_QUEUE_SIZE` | `2048` | In-memory ring buffer capacity |
-| `AGENTSTACK_LOG_LEVEL` | `INFO` | Python logging level |
-| `AGENTSTACK_DEBUG` | `false` | Verbose stderr logging |
-| `AGENTSTACK_SERVICE_NAME` | `default` | Tagged on all spans |
-| `AGENTSTACK_PROJECT_ID` | `default` | Cosmetic — the API derives the real project from your API key regardless |
+| `OXLY_COLLECTOR_URL` | `http://localhost:8000` | Base URL of your running AgentStack API |
+| `OXLY_API_KEY` | *(empty)* | API key from `POST /api/v1/projects` |
+| `OXLY_ENABLED` | `true` | Master on/off switch |
+| `OXLY_BATCH_SIZE` | `64` | Max spans per export batch |
+| `OXLY_EXPORT_INTERVAL` | `5000` | Max ms before a partial batch flushes |
+| `OXLY_MAX_QUEUE_SIZE` | `2048` | In-memory ring buffer capacity |
+| `OXLY_LOG_LEVEL` | `INFO` | Python logging level |
+| `OXLY_DEBUG` | `false` | Verbose stderr logging |
+| `OXLY_SERVICE_NAME` | `default` | Tagged on all spans |
+| `OXLY_PROJECT_ID` | `default` | Cosmetic — the API derives the real project from your API key regardless |
 
 **Dashboard** (`packages/dashboard`, build-time Vite vars):
 
