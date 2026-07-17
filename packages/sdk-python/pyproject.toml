@@ -6,8 +6,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agentstate-sdk"
-version = "0.1.0a1"
+name = "oxly"
+version = "0.1.0"
 description = "Chrome DevTools for AI Agents — observability SDK for LangGraph, CrewAI, AutoGen"
 readme = "README.md"
 license = "Apache-2.0"
