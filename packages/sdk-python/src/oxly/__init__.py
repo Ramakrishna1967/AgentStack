@@ -38,6 +38,8 @@ from oxly.config import OxlyConfig, get_config, reset_config
 from oxly.decorator import observe
 from oxly.tracer import Span, Tracer
 
+logger = logging.getLogger(__name__)
+
 
 def init(
     *,
