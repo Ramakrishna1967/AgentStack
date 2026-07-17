@@ -218,7 +218,7 @@ Oxly runs as **one FastAPI process**. There is no message broker, no separate in
 ```
 .
 ├── packages/
-│   ├── sdk-python/            # Python SDK (pip install agentstate-sdk)
+│   ├── sdk-python/            # Python SDK (pip install oxly)
 │   │   └── src/oxly/
 │   │       ├── decorator.py   # @observe
 │   │       ├── tracer.py      # Span / Tracer
